@@ -1,0 +1,21 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Firebase Admin credentials
+backend/src/utils/firebase-service-account.json
+**/firebase-service-account*.json
+!**/firebase-service-account.example.json
+
+# Dependencies / OS files
+node_modules/
+.DS_Store
