@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Expense = require('../model/Expense');
+const { requireEmployee, requireHrAdmin, requireTrustedOrigin } = require('../middleware/employeeAuth');
+
+router.use(requireEmployee, requireHrAdmin);
+router.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireTrustedOrigin(req, res, next);
+  next();
+});
 
 // Get all expenses
 router.get('/', async (req, res) => {
@@ -64,4 +71,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
