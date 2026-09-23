@@ -46,9 +46,9 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 
 ## Technology Stack
 
-**Frontend:** React, React Router, React-Bootstrap, Chart.js / Recharts, Google Maps API, Firebase SDK
+**Frontend:** React 18, React Router, React-Bootstrap, Chart.js / Recharts, Google Maps API, Firebase Web SDK
 
-**Backend:** Node.js, Express, Passport.js (Google OAuth), MongoDB with Mongoose, Firebase Admin SDK
+**Backend:** Node.js, Express, Passport.js (Google OAuth), MongoDB with Mongoose
 
 **IoT:** BBC micro:bit firmware, Cloudflare Worker (data relay), Firebase Realtime Database
 
@@ -65,10 +65,10 @@ Pet Health Tracker/   IoT firmware, hardware design files, and the Cloudflare Wo
 ## Getting Started
 
 ### Prerequisites
-- Node.js and npm (or yarn)
+- Node.js and npm
 - A MongoDB instance (local or hosted, e.g. MongoDB Atlas)
-- A Firebase project (Realtime Database, and a service account for the backend)
-- A Google Cloud OAuth 2.0 client (for Google login)
+- A Firebase project with Realtime Database enabled for the IoT dashboard
+- A Google Cloud OAuth 2.0 Web client (for Google login)
 - A Gemini API key (for the AI training assistant)
 
 ### Backend Setup
@@ -77,19 +77,42 @@ cd backend
 npm install
 ```
 Create a `.env` file in `backend/` using `.env.example` as the template, with values for:
+- `PORT`, `NODE_ENV`, `FRONTEND_URL`
 - `MONGODB_URL`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL`
-- `FRONTEND_URL`
-- `SESSION_SECRET`
-- `NODE_ENV`
+- `SESSION_SECRET`, `JWT_SECRET`
 - `GEMINI_API_KEY`
 
-A Firebase service-account credential is also required by the backend (used by `backend/src/utils/firebase.js`).
+Generate separate random values for `SESSION_SECRET` and `JWT_SECRET`:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Run the command twice and use a different output for each variable.
+
+For MongoDB Atlas, ensure that the database user exists and that the machine running the backend is included in the Atlas IP access list. If the password contains reserved URL characters, encode them in `MONGODB_URL`.
+
+#### Google OAuth Setup
+
+In the Google Cloud project associated with the application:
+
+1. Open **Google Auth Platform > Branding** and set a meaningful application name, such as **AI-IoT Pet Care System**.
+2. Under **Audience**, add the required test users while the app remains in testing mode.
+3. Under **Clients**, create a **Web application** OAuth client.
+4. Add `http://localhost:3000` and `http://localhost:8090` as authorized JavaScript origins.
+5. Add the following exact authorized redirect URI (without a trailing slash):
+
+```text
+http://localhost:8090/auth/google/callback
+```
+
+Copy the resulting client ID and client secret into `backend/.env`. Changing only the OAuth branding name does not require new credentials or environment-variable changes.
 
 Run the API:
 ```bash
 npm run dev    # development, with nodemon
-npm start      # production
+npm start      # run once, without nodemon
 ```
 The server listens on the port in `PORT`, defaulting to `8090`.
 
@@ -99,14 +122,33 @@ cd frontend
 npm install
 npm start
 ```
-The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` to be set for the live location map to render. Firebase client configuration for the IoT dashboard is currently defined directly in `frontend/src/firebase.js`.
+The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` and the Firebase Web App configuration values in `frontend/.env`. Use `frontend/.env.example` as the template. The IoT dashboard uses Firebase Realtime Database; the main application data remains in MongoDB.
+
+#### Firebase Setup
+
+1. Register a Web App in the Firebase project.
+2. Enable Realtime Database and copy its exact database URL.
+3. Copy the Web App configuration fields into `frontend/.env` using `.env.example` as the template.
+4. Restart the frontend after changing environment variables.
+
+Cloud Firestore and a Firebase Admin service-account key are not required by the currently active application routes. The Firebase Web configuration is used by the browser for Realtime Database access. Configure appropriate Realtime Database security rules before production use.
 
 ### IoT Device
-The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. These are provided for reference and are not part of the npm build.
+The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. Update the worker's Firebase URL and authentication for the selected Firebase project before deploying it. These files are provided for reference and are not part of the npm build.
+
+## Secrets and Environment Files
+
+- Keep runtime credentials in `backend/.env` and frontend configuration in `frontend/.env`.
+- Never commit `.env`, `.env.production`, service-account JSON files, OAuth client secrets, MongoDB credentials, Gemini API keys, session secrets, or JWT secrets.
+- Commit only the provided `.env.example` templates with placeholder values.
+- Firebase Web configuration is not an Admin credential, but API keys should still be restricted to the intended APIs and application origins where supported.
+- If a secret is committed, rotate or revoke it immediately. Deleting it in a later commit does not remove it from Git history.
 
 ## Notes on Current Implementation
 - The Gemini-based AI assistant currently powers the pet training module only; other AI-labeled features (e.g. the chatbot) do not call Gemini.
 - The checkout flow captures payment details in the UI but does not process payments through an external gateway.
+- Firebase Realtime Database is used for IoT readings; the application's main records and login sessions remain in MongoDB.
+- The Firebase Admin SDK dependency and legacy helper remain in the repository, but no active route currently requires Firestore or a Firebase service account.
 - `backend/src/API/routes/pet_tracker.js` exists in the codebase but is not currently wired into `backend/src/app.js`.
 - Several legacy backend entry-point files (`app_backup.js`, `app_backup_full.js`, `app_corrupted.js`) remain in `backend/src/` from earlier iterations and are not used by the running app.
 
