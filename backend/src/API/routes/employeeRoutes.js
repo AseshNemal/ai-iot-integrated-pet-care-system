@@ -51,7 +51,7 @@ router.post('/create', authenticate, async (req, res) => {
 // Retrieve All Employees
 router.get('/', authenticate, async (req, res) => {
     try {
-        const employees = await Employee.find();
+        const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json(employees);
     } catch (error) {
@@ -62,7 +62,7 @@ router.get('/', authenticate, async (req, res) => {
 
 router.get('/get', authenticate, async (req, res) => {
     try {
-        const employees = await Employee.find();
+        const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json({ employees, totalCount });
     } catch (error) {
@@ -86,17 +86,17 @@ router.get('/count', authenticate, async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        
+
         if (!username || !password) {
             return res.status(400).send({ error: "Username and password are required" });
         }
-        
+
         const employee = await Employee.findOne({ username });
-        
+
         if (!employee) {
             return res.status(404).send({ error: "Employee not found" });
         }
-        
+
         if (employee.password !== password) {
             return res.status(401).send({ error: "Invalid credentials" });
         }
