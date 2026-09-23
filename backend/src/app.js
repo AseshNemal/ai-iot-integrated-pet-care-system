@@ -26,7 +26,7 @@ app.use(cors({
         frontendURL, // Production
         process.env.FRONTEND_URL // Additional production URL
     ].filter(Boolean), // Remove undefined values
-    credentials: true 
+    credentials: true
 }));
 
 // ✅ Ensure Express parses JSON properly
@@ -38,8 +38,8 @@ app.use(session({
     secret: process.env.SESSION_SECRET || "your-default-session-secret",
     resave: false,
     saveUninitialized: false, // Prevent empty sessions
-    store: MongoStore.create({ mongoUrl: config.DB_CONNECTION_STRING}),
-    cookie: { 
+    store: MongoStore.create({ mongoUrl: config.DB_CONNECTION_STRING }),
+    cookie: {
         secure: isProduction,  // Use secure cookies in production (HTTPS required)
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 1 day session expiration
@@ -68,21 +68,21 @@ app.get("/get-session", (req, res) => {
     }
 });
 
-app.get("/logout", (req, res) => {
-  req.logout((err) => {
-      if (err) {
-          console.error("Logout error:", err);
-          return res.status(500).json({ message: "Error logging out" });
-      }
-      req.session.destroy(() => {
-          res.clearCookie("connect.sid"); // ✅ Clear session cookie
-          res.redirect(frontendURL); // ✅ Redirect to React home page (production safe)
-      });
-  });
+app.post("/logout", (req, res) => {
+    req.logout((err) => {
+        if (err) {
+            console.error("Logout error:", err);
+            return res.status(500).json({ message: "Error logging out" });
+        }
+        req.session.destroy(() => {
+            res.clearCookie("connect.sid"); // ✅ Clear session cookie
+            res.redirect(frontendURL); // ✅ Redirect to React home page (production safe)
+        });
+    });
 });
 
 const petRouter = require("./API/routes/pets.js")
-app.use("/pet" , petRouter)
+app.use("/pet", petRouter)
 
 import imageProxyRouter from "./API/routes/imageProxy.js";
 app.use("/image-proxy", imageProxyRouter);
@@ -109,7 +109,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/uploads", express.static("uploads"));
 
 const employeeRoutes = require("./API/routes/employeeRoutes.js")
-app.use("/employee",employeeRoutes)
+app.use("/employee", employeeRoutes)
 
 const PetAdRoutes = require("./API/routes/PetAdRoutes.js")
 app.use("/pet-ad", PetAdRoutes);
