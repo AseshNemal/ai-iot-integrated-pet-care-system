@@ -3,6 +3,17 @@ import config from "../configs/index.js";
 import User from "../API/model/user.model.js";
 
 const googleAuth = (passport) => {
+  if (
+    !config.GOOGLE_CLIENT_ID ||
+    !config.GOOGLE_CLIENT_SECRET ||
+    !config.GOOGLE_REDIRECT_URL
+  ) {
+    console.warn(
+      "Google OAuth is disabled. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URL in backend/.env."
+    );
+    return false;
+  }
+
   passport.use(
     new GoogleStrategy.Strategy(
       {
@@ -49,6 +60,8 @@ const googleAuth = (passport) => {
       done(err, null);
     }
   });
+
+  return true;
 };
 
 export { googleAuth };

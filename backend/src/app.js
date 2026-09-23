@@ -52,7 +52,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ✅ Apply Routes
-routesInit(app, passport);
+const googleAuthEnabled = googleAuth(passport);
+routesInit(app, passport, googleAuthEnabled);
 
 // ✅ Main Routes
 app.get("/", (req, res) => {
@@ -86,9 +87,6 @@ app.use("/pet" , petRouter)
 
 import imageProxyRouter from "./API/routes/imageProxy.js";
 app.use("/image-proxy", imageProxyRouter);
-
-const dataRoutes = require("./API/routes/dataRoutes.js")
-app.use('/api', dataRoutes);
 
 const medicalRecords = require("./API/routes/medicalRecords.js")
 app.use('/medical', medicalRecords);
@@ -130,7 +128,6 @@ app.use("/api/notifications", notificationRoutes);
 app.listen(PORT, () => {
     logger.info(`Server is running on PORT ${PORT}`);
     connect();
-    googleAuth(passport);
 });
 
 export default app;

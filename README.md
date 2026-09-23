@@ -67,7 +67,7 @@ Pet Health Tracker/   IoT firmware, hardware design files, and the Cloudflare Wo
 ### Prerequisites
 - Node.js and npm (or yarn)
 - A MongoDB instance (local or hosted, e.g. MongoDB Atlas)
-- A Firebase project (Realtime Database, and a service account for the backend)
+- A Firebase project with Realtime Database enabled for the IoT dashboard
 - A Google Cloud OAuth 2.0 client (for Google login)
 - A Gemini API key (for the AI training assistant)
 
@@ -84,8 +84,6 @@ Create a `.env` file in `backend/` using `.env.example` as the template, with va
 - `NODE_ENV`
 - `GEMINI_API_KEY`
 
-A Firebase service-account credential is also required by the backend (used by `backend/src/utils/firebase.js`).
-
 Run the API:
 ```bash
 npm run dev    # development, with nodemon
@@ -99,7 +97,7 @@ cd frontend
 npm install
 npm start
 ```
-The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` to be set for the live location map to render. Firebase client configuration for the IoT dashboard is currently defined directly in `frontend/src/firebase.js`.
+The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` and the Firebase Web App configuration values in `frontend/.env`. Use `frontend/.env.example` as the template. The IoT dashboard uses Firebase Realtime Database; the main application data remains in MongoDB.
 
 ### IoT Device
 The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. These are provided for reference and are not part of the npm build.
