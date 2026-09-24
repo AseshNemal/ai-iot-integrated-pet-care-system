@@ -125,6 +125,18 @@ app.use("/feedback", feedbackRoutes);
 import notificationRoutes from "./API/routes/notificationRoutes.js";
 app.use("/api/notifications", notificationRoutes);
 
+// IoT Pet Health Tracker simulator (SE4030 test/demo aid only, disabled by default).
+// Requires NODE_ENV != production so this testing utility can never come up in a
+// production deployment, even if ENABLE_IOT_SIMULATOR is left set by mistake.
+// See docs/IOT_SIMULATOR.md.
+if (process.env.ENABLE_IOT_SIMULATOR === "true" && process.env.NODE_ENV !== "production") {
+    const simulatorRoutes = require("./API/routes/simulatorRoutes.js");
+    app.use("/api/simulator", simulatorRoutes);
+    logger.info(`IoT simulator routes enabled at /api/simulator (ENABLE_IOT_SIMULATOR=true, NODE_ENV=${process.env.NODE_ENV || "development"})`);
+} else if (process.env.ENABLE_IOT_SIMULATOR === "true") {
+    logger.warn("ENABLE_IOT_SIMULATOR=true was ignored because NODE_ENV=production. The IoT simulator must not run in production.");
+}
+
 app.listen(PORT, () => {
     logger.info(`Server is running on PORT ${PORT}`);
     connect();
