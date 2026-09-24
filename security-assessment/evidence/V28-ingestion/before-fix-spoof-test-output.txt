@@ -1,0 +1,20 @@
+=== V28 BEFORE-FIX reproduction: unauthenticated telemetry spoofing ===
+Request body sent to the worker (no auth fields present):
+{
+  "Device ID": "1001",
+  "Latitude": 6.9271,
+  "Longitude": 79.8612,
+  "Battery": 100,
+  "Temperature": 45,
+  "hartrate": 220,
+  "step": 999999,
+  "timestamp": "24/09/2026, 00:00:00"
+}
+
+Worker response status/body: {"name":"-StubbedFirebasePushId"}
+
+Outbound calls to Firebase (stubbed): 1
+Firebase call URL: https://pet******-16b82-default-rtdb.firebaseio.com/petcare.json?auth=your_database_secret
+Firebase call body: {"Device ID":"1001","Latitude":6.9271,"Longitude":79.8612,"Battery":100,"Temperature":45,"hartrate":220,"step":999999,"timestamp":"24/09/2026, 00:00:00","Time":"25/09/2026, 00:22:37"}
+
+RESULT: VULNERABLE — the fabricated payload for spoofed Device ID "1001" reached the Firebase write with zero authentication, signature, or ownership checks of any kind.

@@ -1,0 +1,47 @@
+=== V28 AFTER-FIX reproduction #1: exact same spoofing attempt as before ===
+Request body (identical fabricated payload, no auth fields):
+{
+  "Device ID": "1001",
+  "Latitude": 6.9271,
+  "Longitude": 79.8612,
+  "Battery": 100,
+  "Temperature": 45,
+  "hartrate": 220,
+  "step": 999999,
+  "timestamp": "24/09/2026, 00:00:00"
+}
+
+Worker response status: 401
+Worker response body: {"error":"Missing or invalid authentication fields"}
+Outbound calls to Firebase so far: 0
+
+RESULT #1: FIXED — the fabricated, unsigned payload was rejected before reaching Firebase.
+
+=== V28 AFTER-FIX reproduction #2a: unsupported HTTP method (GET) ===
+Worker response status: 405, Allow header: POST
+Worker response body: {"error":"Method Not Allowed"}
+Outbound calls to Firebase so far: 0
+RESULT #2a: unsupported method rejected with 405, never reached Firebase.
+
+=== V28 AFTER-FIX reproduction #2b: oversized request body ===
+Worker response status: 413
+Worker response body: {"error":"Payload Too Large"}
+Outbound calls to Firebase so far: 0
+RESULT #2b: oversized request rejected with 413, never reached Firebase.
+
+=== V28 AFTER-FIX reproduction #3: legitimate, correctly signed request ===
+Signed envelope sent to the worker:
+{
+  "deviceId": "1001",
+  "timestamp": 1790277547486,
+  "nonce": "280d8c1e39f712f9dc2c078378ee7f17",
+  "telemetry": "{\"Device ID\":\"1001\",\"Latitude\":6.9271,\"Longitude\":79.8612,\"Battery\":97,\"Temperature\":38.3,\"hartrate\":420,\"step\":1250,\"timestamp\":\"24/09/2026, 00:00:00\"}",
+  "signature": "13f253146a134f421ed7d4eaaa9e5872538acb47834161a7cd6d48104c411696"
+}
+  (stubbed Firebase call would have been made with body: {"Device ID":"1001","Latitude":6.9271,"Longitude":79.8612,"Battery":97,"Temperature":38.3,"hartrate":420,"step":1250,"timestamp":"24/09/2026, 00:00:00","Time":"25/09/2026, 00:49:07"} )
+
+Worker response status: 200
+Worker response body: {"name":"-StubbedFirebasePushId"}
+Outbound calls to Firebase total: 1
+
+RESULT #3: legitimate, correctly authenticated telemetry still reaches Firebase normally.
