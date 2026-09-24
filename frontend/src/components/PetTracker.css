@@ -1,0 +1,237 @@
+.tracker-card {
+  --tracker-primary: #2b4a3e;
+  --tracker-primary-dim: #3f6657;
+  --tracker-ink: #1c2620;
+  --tracker-muted: #5b6b60;
+  --tracker-border: #dce3da;
+  --tracker-surface: #ffffff;
+  --tracker-bg-soft: #f2f6f0;
+  background: var(--tracker-surface);
+  border: 1px solid var(--tracker-border);
+  border-radius: 10px;
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin: 32px 0;
+  padding: 22px 24px;
+}
+
+.tracker-card *,
+.tracker-card *::before,
+.tracker-card *::after {
+  box-sizing: border-box;
+}
+
+.tracker-card__header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.tracker-card__header h2 {
+  color: var(--tracker-ink);
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tracker-badge {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 11px;
+}
+
+.tracker-badge--simulator {
+  background: #fbedd6;
+  color: #8a5a12;
+}
+
+.tracker-badge--physical {
+  background: #e6ede8;
+  color: var(--tracker-primary);
+}
+
+.tracker-error {
+  background: #f8e9e6;
+  border: 1px solid #e6c3bb;
+  border-radius: 8px;
+  color: #8a3a2d;
+  font-size: 0.85rem;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+}
+
+.tracker-warning {
+  color: #8a5a12;
+  font-size: 0.8rem;
+  margin: 10px 0 0;
+}
+
+.tracker-state {
+  margin-top: 16px;
+}
+
+.tracker-state__title {
+  color: var(--tracker-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.tracker-state__hint {
+  color: var(--tracker-muted);
+  font-size: 0.875rem;
+  margin: 0 0 16px;
+}
+
+.tracker-connect-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tracker-input {
+  background: var(--tracker-bg-soft);
+  border: 1px solid var(--tracker-border);
+  border-radius: 6px;
+  color: var(--tracker-ink);
+  flex: 1 1 200px;
+  font-size: 0.9rem;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.tracker-input:focus-visible {
+  outline: 2px solid #e3a13b;
+  outline-offset: 1px;
+}
+
+.tracker-button {
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 10px 16px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.tracker-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tracker-button--primary {
+  background: var(--tracker-primary);
+  border: 1px solid var(--tracker-primary);
+  color: #ffffff;
+}
+
+.tracker-button--primary:not(:disabled):hover {
+  background: var(--tracker-primary-dim);
+}
+
+.tracker-button--secondary {
+  background: var(--tracker-bg-soft);
+  border: 1px solid var(--tracker-border);
+  color: var(--tracker-ink);
+}
+
+.tracker-button--secondary:not(:disabled):hover {
+  background: #e6ede8;
+}
+
+.tracker-button--ghost {
+  background: transparent;
+  border: 1px solid var(--tracker-border);
+  color: var(--tracker-muted);
+}
+
+.tracker-button--ghost:not(:disabled):hover {
+  background: var(--tracker-bg-soft);
+}
+
+.tracker-divider {
+  align-items: center;
+  color: var(--tracker-muted);
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.tracker-divider::before,
+.tracker-divider::after {
+  background: var(--tracker-border);
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+.tracker-facts {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 0;
+}
+
+.tracker-facts dt {
+  color: var(--tracker-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin: 0 0 2px;
+}
+
+.tracker-facts dd {
+  color: var(--tracker-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tracker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tracker-simulator-controls {
+  border-top: 1px solid var(--tracker-border);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.tracker-simulator-controls__label {
+  color: var(--tracker-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.tracker-card .sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+@media (max-width: 480px) {
+  .tracker-card {
+    padding: 18px;
+  }
+
+  .tracker-connect-row {
+    flex-direction: column;
+  }
+
+  .tracker-input {
+    width: 100%;
+  }
+}
