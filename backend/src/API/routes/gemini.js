@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+const { authenticate } = require('../middleware/auth.middlewere');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ async function callGeminiAPI(promptText) {
 // ---------------------------
 // Behavioral Training Endpoint
 // ---------------------------
-router.post('/behavioral', async (req, res) => {
+router.post('/behavioral', authenticate, async (req, res) => {
   const {
     petType,
     breed,
@@ -113,7 +114,7 @@ Return the result in the following JSON format:
 // ---------------------------
 // Obedience Training Endpoint
 // ---------------------------
-router.post('/obedience', async (req, res) => {
+router.post('/obedience', authenticate, async (req, res) => {
   const {
     petType,
     breed,

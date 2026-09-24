@@ -29,7 +29,7 @@ function EmployeeLogin() {
     } catch (error) {
       console.error("Login error:", error);
       setError(
-        error.response?.data || 
+        error.response?.data?.error ||
         "Login failed. Please check your credentials."
       );
     } finally {
@@ -91,4 +91,4 @@ function EmployeeLogin() {
   );
 }
 
-export default EmployeeLogin; 
+export default EmployeeLogin;

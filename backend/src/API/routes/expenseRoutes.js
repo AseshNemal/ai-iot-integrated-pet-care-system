@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Expense = require('../model/Expense');
+const { authenticate } = require('../middleware/auth.middlewere');
 
 // Get all expenses
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const expenses = await Expense.find().sort({ createdAt: -1 });
     res.json(expenses);
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new expense
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   const expense = new Expense({
     itemName: req.body.itemName,
     quantity: req.body.quantity,
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update an expense
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
@@ -50,7 +51,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete an expense
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
@@ -64,4 +65,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

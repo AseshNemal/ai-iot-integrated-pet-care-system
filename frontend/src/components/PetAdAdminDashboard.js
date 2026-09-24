@@ -128,12 +128,19 @@ function PetAdAdminDashboard() {
     })
   }
 
-  const handleLogout = () => {
-    setAds([])
-    setStatus("Pending")
-    setError("")
-    setSuccess("")
-    navigate("/adminDashboard")
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:8090/employee/logout")
+    } catch (logoutError) {
+      console.error("Admin logout error:", logoutError)
+    } finally {
+      localStorage.removeItem("employeeData")
+      setAds([])
+      setStatus("Pending")
+      setError("")
+      setSuccess("")
+      navigate("/login")
+    }
   }
 
   return (

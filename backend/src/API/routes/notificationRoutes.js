@@ -2,6 +2,7 @@ import express from 'express';
 import Notification from '../model/Notification.js';
 import Appointment from '../model/Appointment.js';
 import User from '../model/user.model.js';
+import { authenticate } from '../middleware/auth.middlewere.js';
 
 const router = express.Router();
 
@@ -75,7 +76,7 @@ router.put('/user/:userId/mark-all-read', async (req, res) => {
 });
 
 // Create a notification for an appointment
-router.post('/appointment', async (req, res) => {
+router.post('/appointment', authenticate, async (req, res) => {
   try {
     const { appointmentId, userId, title, message } = req.body;
     
@@ -121,7 +122,7 @@ router.get('/user/:userId/unread-count', async (req, res) => {
 });
 
 // Create appointment booking notification
-router.post('/appointment-booking', async (req, res) => {
+router.post('/appointment-booking', authenticate, async (req, res) => {
   try {
     const { appointmentId } = req.body;
     
@@ -174,4 +175,4 @@ router.post('/appointment-booking', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

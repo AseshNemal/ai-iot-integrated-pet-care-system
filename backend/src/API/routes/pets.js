@@ -1,9 +1,10 @@
 const router = require("express").Router();
 //import { useId } from "react";
 import Pet from "../model/pet";
+const { authenticate } = require('../middleware/auth.middlewere');
 
 
-router.route("/add").post((req,res)=>{
+router.route("/add").post(authenticate, (req,res)=>{
 
     const petName = req.body.petName;
     const userId = req.body.userId;
@@ -37,7 +38,7 @@ router.route("/add").post((req,res)=>{
 
 })
 
-router.route("/").get((req, res) => {
+router.route("/").get(authenticate, (req, res) => {
     Pet.find()
         .then((pets) => {
             res.json(pets);
@@ -49,7 +50,7 @@ router.route("/").get((req, res) => {
 });
 
 
-router.route("/update/:id").put(async (req, res) => {
+router.route("/update/:id").put(authenticate, async (req, res) => {
     try {
         const pet = await Pet.findByIdAndUpdate(
             req.params.id,
@@ -74,7 +75,7 @@ router.route("/update/:id").put(async (req, res) => {
 });
 
 
-router.get('/petDetaile/:petId', async (req, res) => {
+router.get('/petDetaile/:petId', authenticate, async (req, res) => {
     try {
       const pet = await Pet.findById(req.params.petId);
       if (!pet) {
@@ -86,7 +87,7 @@ router.get('/petDetaile/:petId', async (req, res) => {
     }
   });
 
-router.route("/delete/:id").delete(async(req,res) =>{
+router.route("/delete/:id").delete(authenticate, async(req,res) =>{
     let petid = req.params.id;
 
     await Pet.findByIdAndDelete(petid)
@@ -99,7 +100,7 @@ router.route("/delete/:id").delete(async(req,res) =>{
 
 } )
 
-router.route("/find/:uid").get(async (req, res) => {
+router.route("/find/:uid").get(authenticate, async (req, res) => {
     try {
         const userId = req.params.uid;
         const pets = await Pet.find({ userId });

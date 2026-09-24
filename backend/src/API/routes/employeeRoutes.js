@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Employee = require('../model/Employee');
 const AppointmentData = require('../model/AppointmentData');
+const { authenticate } = require('../middleware/auth.middlewere');
 
 // Create Employee
-router.post('/create', async (req, res) => {
+router.post('/create', authenticate, async (req, res) => {
     try {
         const { firstName, lastName, username, email, password, role } = req.body;
 
@@ -33,7 +34,7 @@ router.post('/create', async (req, res) => {
 });
 
 // Retrieve All Employees
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
     try {
         const employees = await Employee.find();
         const totalCount = employees.length; // Include count in response
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/get', async (req, res) => {
+router.get('/get', authenticate, async (req, res) => {
     try {
         const employees = await Employee.find();
         const totalCount = employees.length; // Include count in response
@@ -56,7 +57,7 @@ router.get('/get', async (req, res) => {
 });
 
 // Get Total Employee Count
-router.get('/count', async (req, res) => {
+router.get('/count', authenticate, async (req, res) => {
     try {
         const totalCount = await Employee.countDocuments();
         res.status(200).json({ totalCount });
@@ -85,12 +86,26 @@ router.post('/login', async (req, res) => {
             return res.status(401).send({ error: "Invalid credentials" });
         }
         
-        // Return employee data without password
+        // Store only non-password employee data in the server-side session.
         const { password: _, ...employeeData } = employee.toObject();
-        
-        res.status(200).json({ 
-            message: "Login successful", 
-            user: employeeData 
+        req.session.regenerate((regenerateError) => {
+            if (regenerateError) {
+                console.error('Error regenerating employee session:', regenerateError);
+                return res.status(500).send({ error: "Unable to create login session" });
+            }
+
+            req.session.employee = employeeData;
+            req.session.save((sessionError) => {
+                if (sessionError) {
+                    console.error('Error saving employee session:', sessionError);
+                    return res.status(500).send({ error: "Unable to create login session" });
+                }
+
+                res.status(200).json({
+                    message: "Login successful",
+                    user: employeeData
+                });
+            });
         });
     } catch (error) {
         console.error('Error during employee login:', error);
@@ -98,8 +113,25 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// Employee/Admin Logout
+router.post('/logout', (req, res) => {
+    if (!req.session?.employee) {
+        return res.status(204).end();
+    }
+
+    delete req.session.employee;
+    req.session.save((error) => {
+        if (error) {
+            console.error('Error clearing employee session:', error);
+            return res.status(500).send({ error: "Unable to clear login session" });
+        }
+
+        res.status(200).json({ message: "Logout successful" });
+    });
+});
+
 // Delete Employee
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
     try {
         const employee = await Employee.findByIdAndDelete(req.params.id);
         if (!employee) {
@@ -114,7 +146,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Update Employee
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
     try {
         const { firstName, lastName, username, email, password, role } = req.body;
         const employee = await Employee.findById(req.params.id);
@@ -142,7 +174,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Add Appointment
-router.post('/appointment', async (req, res) => {
+router.post('/appointment', authenticate, async (req, res) => {
     try {
         const { employeeId, petName, appointmentDate } = req.body;
 
@@ -169,7 +201,7 @@ router.post('/appointment', async (req, res) => {
 });
 
 // Get Appointment Counts per Employee
-router.get('/appointment-counts', async (req, res) => {
+router.get('/appointment-counts', authenticate, async (req, res) => {
     try {
         const employees = await Employee.find().select('employeeId firstName lastName role appointments');
         const appointmentCounts = employees.map(employee => ({
@@ -189,7 +221,7 @@ router.get('/appointment-counts', async (req, res) => {
 });
 
 // SECTION 1: RECEIVING APPOINTMENT DATA FROM APPOINTMENT SCHEDULING STUDENT
-router.post('/receive-appointment-data', async (req, res) => {
+router.post('/receive-appointment-data', authenticate, async (req, res) => {
     try {
         console.log('Received data:', req.body);
         const { employeeId, name, role, appointmentCount } = req.body;
@@ -212,7 +244,7 @@ router.post('/receive-appointment-data', async (req, res) => {
 });
 
 // SECTION 2: PROVIDING SORTED APPOINTMENT DATA FOR FINANCE MANAGEMENT STUDENT
-router.get('/sorted-appointment-data', async (req, res) => {
+router.get('/sorted-appointment-data', authenticate, async (req, res) => {
     try {
         const appointmentData = await AppointmentData.find().sort({ appointmentCount: -1 });
         res.status(200).json(appointmentData);
@@ -223,7 +255,7 @@ router.get('/sorted-appointment-data', async (req, res) => {
 });
 
 // SECTION 3: CLEARING APPOINTMENT DATA BEFORE UPLOADING SORTED DATA
-router.delete('/sorted-appointment-data', async (req, res) => {
+router.delete('/sorted-appointment-data', authenticate, async (req, res) => {
     try {
         console.log('Clearing AppointmentData collection');
         await AppointmentData.deleteMany({});
