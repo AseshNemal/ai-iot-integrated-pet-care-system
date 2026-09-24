@@ -1,10 +1,35 @@
 /* routes/appointment.routes.js */
 import express from "express";
 import Appointment from "../model/Appointment.js";
-import { authenticate } from "../middleware/auth.middlewere.js";
+import { authenticate, authorizeRoles } from "../middleware/auth.middlewere.js";
 import axios from "axios"; // Add axios for notification API call
 
 const router = express.Router();
+
+const ownerEditableFields = [
+  "petName",
+  "serviceCategory",
+  "appointmentDate",
+  "appointmentTime",
+];
+
+const employeeEditableFields = [
+  "appointmentDate",
+  "appointmentTime",
+  "status",
+];
+
+const idsMatch = (firstId, secondId) =>
+  Boolean(firstId && secondId && firstId.toString() === secondId.toString());
+
+const canAccessAppointment = (appointment, user) =>
+  idsMatch(appointment.petOwnerId, user?._id) ||
+  idsMatch(appointment.employeeId, user?._id);
+
+const editableFieldsFor = (appointment, user) =>
+  idsMatch(appointment.petOwnerId, user?._id)
+    ? ownerEditableFields
+    : employeeEditableFields;
 
 // Validation helper
 const isValidAppointmentDate = (date) => {
@@ -104,8 +129,13 @@ router.post("/", authenticate, async (req, res) => {
 router.get("/user/:userId", authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!idsMatch(userId, req.user?._id)) {
+      return res.status(403).json({ error: "You do not have permission to access these appointments." });
+    }
+
     const appointments = await Appointment.find({
-      $or: [{ petOwnerId: userId }, { employeeId: userId }]
+      $or: [{ petOwnerId: req.user._id }, { employeeId: req.user._id }]
     }).sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (err) {
@@ -126,17 +156,28 @@ router.put("/:id", authenticate, async (req, res) => {
       }
     }
 
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      id,
-      { ...req.body, updatedAt: new Date() },
-      { new: true }
-    );
+    const appointment = await Appointment.findById(id);
 
-    if (!updatedAppointment) {
+    if (!appointment) {
       return res.status(404).json({ error: "Appointment not found." });
     }
 
-    res.json(updatedAppointment);
+    if (!canAccessAppointment(appointment, req.user)) {
+      return res.status(403).json({ error: "You do not have permission to update this appointment." });
+    }
+
+    editableFieldsFor(appointment, req.user).forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        appointment[field] = field === "appointmentDate"
+          ? new Date(req.body[field])
+          : req.body[field];
+      }
+    });
+
+    appointment.updatedAt = new Date();
+    await appointment.save();
+
+    res.json(appointment);
   } catch (err) {
     res.status(500).json({ error: "Failed to update appointment." });
   }
@@ -145,10 +186,17 @@ router.put("/:id", authenticate, async (req, res) => {
 // 📌 Delete appointment
 router.delete("/:id", authenticate, async (req, res) => {
   try {
-    const deletedAppointment = await Appointment.findByIdAndDelete(req.params.id);
-    if (!deletedAppointment) {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
       return res.status(404).json({ error: "Appointment not found." });
     }
+
+    if (!canAccessAppointment(appointment, req.user)) {
+      return res.status(403).json({ error: "You do not have permission to delete this appointment." });
+    }
+
+    await appointment.deleteOne();
     res.json({ message: "Appointment deleted successfully." });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete appointment." });
@@ -193,8 +241,8 @@ router.get("/available-slots", async (req, res) => {
   }
 });
 
-// 📌 New Route for HR (without authentication)
-router.get("/all", async (req, res) => {
+// 📌 Get all appointments for authorized administrators
+router.get("/all", authenticate, authorizeRoles("Admin"), async (req, res) => {
   try {
     const appointments = await Appointment.find({}).sort({ appointmentDate: 1 });
     res.json(appointments);
