@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { realtimeDB } from "../firebase";
-import { ref, onValue } from "firebase/database";
+import axios from "axios";
 import { Line } from "react-chartjs-2";
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import "./deviceData.css";
 
@@ -27,6 +26,13 @@ ChartJS.register(
   Legend
 );
 
+const API_BASE = "http://localhost:8090";
+// Poll instead of a live Firebase listener: the dashboard now goes through an
+// authenticated, ownership-checked backend endpoint (GET /pet/tracker/:deviceId)
+// instead of reading the Realtime Database directly from the browser. Matches
+// the poll interval already used for simulator status in PetTracker.js.
+const TELEMETRY_POLL_MS = 5000;
+
 // Simulator devices are allocated starting at this ID by the backend
 // (backend/src/services/iotSimulatorService.js, SIMULATOR_ID_RANGE_START),
 // which is how a paired device is told apart from a physical tracker here.
@@ -41,57 +47,75 @@ const DeviceData = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [selectedDeviceData, setSelectedDeviceData] = useState(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  // 'loading' | 'ok' | 'unauthenticated' | 'forbidden' | 'not-found' | 'error'
+  const [accessState, setAccessState] = useState('loading');
   const { deviceId } = useParams();
 
+  // Fetches from the authenticated, ownership-checked backend endpoint
+  // (GET /pet/tracker/:deviceId) instead of reading the Realtime Database
+  // directly from the browser. The backend derives the caller from their
+  // session and only returns telemetry for devices that belong to them, so
+  // this component no longer decides who is allowed to see what.
   useEffect(() => {
-    const dataRef = ref(realtimeDB, "petcare");
+    let cancelled = false;
 
-    onValue(dataRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const rawData = snapshot.val();
-        console.log("Firebase Data:", rawData);
+    const fetchTelemetry = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/pet/tracker/${deviceId}`);
+        if (cancelled) return;
 
-        const formattedData = Object.keys(rawData).map((key) => ({
-          id: key,
-          DeviceID: rawData[key]["Device ID"] || "Unknown",
-          Latitude: rawData[key].Latitude ? Number(rawData[key].Latitude) : null,
-          Longitude: rawData[key].Longitude ? Number(rawData[key].Longitude) : null,
-          Altitude: rawData[key].Altitude || "N/A",
-          BatteryLevel: rawData[key].Battery ? Number(rawData[key].Battery) : -1,
-          En_Temperature: rawData[key].En_temperature ? Number(rawData[key].En_temperature) : 0,
-          En_Humidity: rawData[key].en_humidity ? Number(rawData[key].en_humidity) : 0,
-          AirQuality: rawData[key].AirQuality ? Number(rawData[key].AirQuality/4) : 0,
-          Temperature: rawData[key].Temperature ? Number(rawData[key].Temperature) : 0,
-          HeartRate: rawData[key].hartrate ? Number(rawData[key].hartrate/5) : 0,
-          Steps: rawData[key].step ? Number(rawData[key].step) : 0,
-          Timestamp: rawData[key].timestamp || "No timestamp",
+        setAccessState('ok');
+        const records = res.data.records || [];
+
+        const formattedData = records.map((record) => ({
+          id: record.id,
+          DeviceID: record["Device ID"] || "Unknown",
+          Latitude: record.Latitude ? Number(record.Latitude) : null,
+          Longitude: record.Longitude ? Number(record.Longitude) : null,
+          Altitude: record.Altitude || "N/A",
+          BatteryLevel: record.Battery ? Number(record.Battery) : -1,
+          En_Temperature: record.En_temperature ? Number(record.En_temperature) : 0,
+          En_Humidity: record.en_humidity ? Number(record.en_humidity) : 0,
+          AirQuality: record.AirQuality ? Number(record.AirQuality / 4) : 0,
+          Temperature: record.Temperature ? Number(record.Temperature) : 0,
+          HeartRate: record.hartrate ? Number(record.hartrate / 5) : 0,
+          Steps: record.step ? Number(record.step) : 0,
+          Timestamp: record.timestamp || "No timestamp",
         }));
 
         const sortedData = formattedData.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         setDeviceData(sortedData);
 
         const recordCount = sortedData.length;
-        console.log("Number of records:", recordCount);
-
-        const latestRecord = sortedData[recordCount - 1];
+        const latestRecord = sortedData[recordCount - 1] || null;
         setLatestData(latestRecord);
         setCount(recordCount);
-
-        setSelectedDeviceId(deviceId)
-        if (selectedDeviceId) {
-          const device = sortedData.find(item => item.DeviceID === selectedDeviceId);
-          setSelectedDeviceData(device || null);
-        }
+        setSelectedDeviceId(deviceId);
+        setSelectedDeviceData(latestRecord);
 
         if (latestRecord && latestRecord.Latitude && latestRecord.Longitude) {
           fetchLocation(latestRecord.Latitude, latestRecord.Longitude);
         }
-      } else {
-        console.log("No data found in Firebase.");
+      } catch (err) {
+        if (cancelled) return;
         setDeviceData([]);
+        setLatestData(null);
+        const status = err.response?.status;
+        if (status === 401) setAccessState('unauthenticated');
+        else if (status === 403) setAccessState('forbidden');
+        else if (status === 404) setAccessState('not-found');
+        else setAccessState('error');
       }
-    });
-  },[selectedDeviceId]);
+    };
+
+    fetchTelemetry();
+    const pollId = setInterval(fetchTelemetry, TELEMETRY_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+    };
+  }, [deviceId]);
 
   const fetchLocation = (latitude, longitude) => {
     console.log(`Attempting to update location with Latitude: ${latitude}, Longitude: ${longitude}`);
@@ -445,6 +469,64 @@ const DeviceData = () => {
       symbol: "AQ",
     },
   ];
+
+  // Presentational only — the backend endpoint (GET /pet/tracker/:deviceId)
+  // is what actually enforces authentication and device ownership. This UI
+  // state exists for UX; it is not itself a security boundary.
+  if (accessState === 'loading') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">Loading tracker…</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'unauthenticated') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">
+            <p>Please log in to view this pet's tracker.</p>
+            <Link to="/login" className="dashboard-refresh">Log in</Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'forbidden') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">
+            This device is not associated with one of your pets.
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'not-found') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">No device found with this ID.</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'error') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">Could not load tracker data. Please try again.</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="pet-dashboard">

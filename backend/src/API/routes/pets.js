@@ -1,7 +1,24 @@
 const router = require("express").Router();
 //import { useId } from "react";
+import axios from "axios";
 import Pet from "../model/pet";
 const { authenticate } = require('../middleware/auth.middlewere');
+
+// Server-side-only read of the same Realtime Database node the IoT simulator
+// writes to (backend/src/services/iotSimulatorService.js). Reused here rather
+// than adding a parallel config so the tracker endpoint below always points at
+// the same "petcare" node that telemetry is actually published to.
+function getFirebaseTelemetryUrl() {
+    const databaseUrl =
+        process.env.FIREBASE_RTDB_URL || process.env.IOT_SIMULATOR_FIREBASE_DATABASE_URL;
+    if (!databaseUrl) {
+        throw new Error(
+            "FIREBASE_RTDB_URL (or IOT_SIMULATOR_FIREBASE_DATABASE_URL) is not set. " +
+            "Add it to backend/.env to use the pet tracker endpoint."
+        );
+    }
+    return `${databaseUrl.replace(/\/$/, "")}/petcare.json`;
+}
 
 
 router.route("/add").post(authenticate, (req,res)=>{
@@ -116,6 +133,45 @@ router.route("/find/:uid").get(authenticate, async (req, res) => {
     }
 });
 
+// Authenticated, ownership-checked telemetry read for the Pet Tracker
+// dashboard (frontend/src/components/deviceData.js). Replaces the previous
+// unauthenticated direct-from-browser Firebase read: the backend derives the
+// caller from their session, checks that the requested device belongs to one
+// of their pets, and only then fetches and returns that device's telemetry.
+router.route("/tracker/:deviceId").get(authenticate, async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+        const requesterId = String(req.user?._id || req.user?.id || "");
 
+        const numericDeviceId = Number(deviceId);
+        const ownerPet = Number.isNaN(numericDeviceId)
+            ? null
+            : await Pet.findOne({ deviceId: numericDeviceId });
+
+        if (!ownerPet) {
+            return res.status(404).json({ error: "Device not found" });
+        }
+
+        if (String(ownerPet.userId) !== requesterId) {
+            return res.status(403).json({ error: "You do not have access to this device" });
+        }
+
+        const authSecret =
+            process.env.FIREBASE_RTDB_SECRET || process.env.IOT_SIMULATOR_FIREBASE_DATABASE_SECRET;
+        const response = await axios.get(getFirebaseTelemetryUrl(), {
+            params: authSecret ? { auth: authSecret } : undefined,
+        });
+
+        const rawData = response.data || {};
+        const records = Object.entries(rawData)
+            .filter(([, record]) => String(record?.["Device ID"]) === String(deviceId))
+            .map(([id, record]) => ({ id, ...record }));
+
+        res.json({ deviceId: numericDeviceId, records });
+    } catch (err) {
+        console.error("Error fetching pet tracker telemetry:", err.message);
+        res.status(500).json({ error: "Error fetching telemetry", details: err.message });
+    }
+});
 
 module.exports = router;

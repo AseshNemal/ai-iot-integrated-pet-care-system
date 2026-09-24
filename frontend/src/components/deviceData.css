@@ -27,6 +27,21 @@
   width: 100%;
 }
 
+.dashboard-access-state {
+  align-items: center;
+  background: var(--dashboard-surface);
+  border: 1px solid var(--dashboard-border);
+  border-radius: 16px;
+  color: var(--dashboard-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 40px auto;
+  max-width: 480px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
 .dashboard-card,
 .dashboard-hero,
 .metric-card {
