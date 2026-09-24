@@ -13,4 +13,18 @@ const authenticate = (req, res, next) => {
     }
 };
 
-export { authenticate };
+const authorizeRoles = (...allowedRoles) => {
+    const normalizedRoles = allowedRoles.map((role) => role.toLowerCase());
+
+    return (req, res, next) => {
+        const userRole = req.user?.role;
+
+        if (!userRole || !normalizedRoles.includes(userRole.toLowerCase())) {
+            return res.status(403).json({ error: "You do not have permission to access this resource." });
+        }
+
+        next();
+    };
+};
+
+export { authenticate, authorizeRoles };

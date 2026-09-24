@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const PetAd = require("../model/PetAd");
+const { authenticate, authorizeRoles } = require('../middleware/auth.middlewere');
+
+const authorizeAdmin = authorizeRoles('Admin');
 
 // Middleware to authenticate users (example, assuming JWT)
 const authMiddleware = async (req, res, next) => {
@@ -149,7 +152,7 @@ router.get("/approved", async (req, res) => {
 });
 
 // Admin: Get all ads by status
-router.get("/admin/list", async (req, res) => {
+router.get("/admin/list", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { status } = req.query;
     const query = status ? { status } : {};
@@ -162,7 +165,7 @@ router.get("/admin/list", async (req, res) => {
 });
 
 // Admin: Approve ad
-router.post("/admin/approve/:id", async (req, res) => {
+router.post("/admin/approve/:id", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const ad = await PetAd.findById(req.params.id);
     if (!ad) {
@@ -178,7 +181,7 @@ router.post("/admin/approve/:id", async (req, res) => {
 });
 
 // Admin: Reject ad
-router.post("/admin/reject/:id", async (req, res) => {
+router.post("/admin/reject/:id", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { rejectionReason } = req.body;
     if (!rejectionReason) {
@@ -198,7 +201,7 @@ router.post("/admin/reject/:id", async (req, res) => {
 });
 
 // Admin: Delete ad
-router.post("/admin/delete/:id", async (req, res) => {
+router.post("/admin/delete/:id", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { rejectionReason } = req.body;
     if (!rejectionReason) {
@@ -218,7 +221,7 @@ router.post("/admin/delete/:id", async (req, res) => {
 });
 
 // Admin: Delete approved ad
-router.delete("/admin/approved/delete/:id", async (req, res) => {
+router.delete("/admin/approved/delete/:id", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { deletionReason } = req.body;
     if (!deletionReason) {
@@ -241,7 +244,7 @@ router.delete("/admin/approved/delete/:id", async (req, res) => {
 });
 
 // Admin: Edit approved ad
-router.put("/admin/approved/edit/:id", async (req, res) => {
+router.put("/admin/approved/edit/:id", authenticate, authorizeAdmin, async (req, res) => {
   try {
     const { image, type, breed, weight, description, contactNumber } = req.body;
 
