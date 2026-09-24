@@ -14,7 +14,12 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 ### Medical Records & Appointments
 - Pet profile management (add/edit/list pets, owner association)
 - Medical record creation and editing per pet
-- Veterinary appointment scheduling
+- Veterinary and grooming appointment scheduling with live staff/time-slot selection
+- Appointment creation derives the pet owner from the authenticated session and
+  resolves staff names and roles from the server-side employee record
+- Appointment reads, updates, and cancellations enforce object-level authorization:
+  only the pet owner or assigned employee can access an individual appointment,
+  while the all-appointments view requires the `Admin` role
 
 ### AI-Assisted Features
 - AI-powered pet training assistant (`backend/src/API/routes/gemini.js`) using the Gemini API to generate behavioral-correction and obedience-training plans from a submitted questionnaire
@@ -40,6 +45,12 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 - Google OAuth login (Passport.js) and employee/administrator credential login both use server-side sessions
 - Session cookies are managed with `express-session` and a MongoDB-backed session store; the React Axios client sends credentials with API requests
 - Privileged pet, medical-record, employee, product, order, expense, feedback, notification, and Gemini endpoints reject unauthenticated requests with HTTP `401`
+- Appointment routes enforce both authentication and ownership/assignment checks;
+  changing a user ID or appointment ID in the URL does not grant access to another
+  user's appointment
+- `GET /employee/booking-options` is intentionally public for the booking form and
+  returns only `_id`, first name, last name, and role; full employee records remain
+  behind authentication
 - Adoption-ad routes under `/PetAd/admin/*` additionally require the authenticated employee to have the `Admin` role and return HTTP `403` for insufficient privileges
 - Employee and administrator login regenerates the session before storing identity data, and the stored session/response does not include the password
 - Employee and administrator logout clears the server-side employee session as well as the corresponding browser state
@@ -138,6 +149,21 @@ npm start
 ```
 The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` and the Firebase Web App configuration values in `frontend/.env`. Use `frontend/.env.example` as the template. The IoT dashboard uses Firebase Realtime Database; the main application data remains in MongoDB.
 
+#### Appointment API Access Rules
+
+| Method | Path | Access rule |
+|---|---|---|
+| `POST` | `/api/appointments` | Authenticated user; owner identity comes from the session |
+| `GET` | `/api/appointments/user/:userId` | The path ID must match the authenticated identity |
+| `PUT` | `/api/appointments/:id` | Pet owner or assigned employee; editable fields depend on which participant is acting |
+| `DELETE` | `/api/appointments/:id` | Pet owner or assigned employee |
+| `GET` | `/api/appointments/all` | Authenticated `Admin` only |
+| `GET` | `/employee/booking-options` | Public, limited staff projection used by the booking form |
+
+Appointment notifications are created directly by the backend after a successful
+booking. The backend does not make an unauthenticated HTTP request back into its own
+protected notification API.
+
 #### Firebase Setup
 
 1. Register a Web App in the Firebase project.
@@ -146,6 +172,20 @@ The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` and the Firebase Web App co
 4. Restart the frontend after changing environment variables.
 
 Cloud Firestore and a Firebase Admin service-account key are not required by the currently active application routes. The Firebase Web configuration is used by the browser for Realtime Database access. Configure appropriate Realtime Database security rules before production use.
+
+### Automated Tests
+
+Run the backend security and booking regression tests with:
+
+```bash
+cd backend
+npm test -- --runInBand
+```
+
+The appointment suites cover unauthenticated requests, cross-account reads,
+unauthorized update/delete attempts, ownership-field tampering, role-restricted
+all-appointment access, safe booking staff data, same-day bookings, server-derived
+employee details, and unavailable employee selections.
 
 ### IoT Device
 The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. Update the worker's Firebase URL and authentication for the selected Firebase project before deploying it. These files are provided for reference and are not part of the npm build.
@@ -161,6 +201,10 @@ The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a 
 ## Notes on Current Implementation
 
 - The V02 missing-authentication remediation is applied to the privileged routes listed above. Public browsing and other intentionally public endpoints remain accessible without a session.
+- The V3 appointment IDOR remediation binds user-scoped reads to the authenticated
+  session, checks appointment participation before update/delete operations, prevents
+  ownership reassignment through request bodies, and restricts the all-appointments
+  endpoint to administrators.
 - The authentication middleware supports both Passport-based Google sessions and employee/administrator sessions, preventing intermittent `User not authenticated` responses when navigating after a successful employee login.
 - The Gemini-based AI assistant currently powers the pet training module only; other AI-labeled features (e.g. the chatbot) do not call Gemini.
 - The checkout flow captures payment details in the UI but does not process payments through an external gateway.
