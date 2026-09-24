@@ -18,12 +18,6 @@ function Footer() {
           <li><Link to="/feedbackform">Feedback</Link></li>
         </ul>
 
-        <ul className="site-footer__social">
-          <li><a href="https://twitter.com">Twitter</a></li>
-          <li><a href="https://facebook.com">Facebook</a></li>
-          <li><a href="https://instagram.com">Instagram</a></li>
-        </ul>
-
         <p className="site-footer__copy">
           © {new Date().getFullYear()} Pet Wellness Hub. Made with <span className="site-footer__heart">♥</span> for pets.
         </p>
