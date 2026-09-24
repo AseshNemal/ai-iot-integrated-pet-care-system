@@ -19,6 +19,16 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   const [employees, setEmployees] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
 
+  const toLocalDateInputValue = (date) => [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  const today = new Date();
+  const maxAppointmentDate = new Date(today);
+  maxAppointmentDate.setMonth(today.getMonth() + 60);
+
   useEffect(() => {
     fetch("http://localhost:8090/get-session", { credentials: "include" })
       .then((res) => res.json())
@@ -33,10 +43,12 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get("http://localhost:8090/employee/");
+        const response = await axios.get("http://localhost:8090/employee/booking-options");
         setEmployees(response.data);
+        setError('');
       } catch (err) {
         console.error("Failed to fetch employees:", err);
+        setError(err.response?.data?.error || 'Unable to load available staff. Please try again.');
       }
     };
     fetchEmployees();
@@ -115,13 +127,10 @@ const AppointmentForm = ({ serviceType, onClose }) => {
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8090/api/appointments",
         {
-          userId,
           employeeId: form.employeeId,
-          employeeFirstName: form.employeeFirstName,
-          employeeRole: form.employeeRole,
           petName: form.petName,
           serviceCategory: form.category,
           appointmentDate: form.date,
@@ -202,8 +211,8 @@ const AppointmentForm = ({ serviceType, onClose }) => {
           value={form.date}
           onChange={handleChange}
           required
-          min={new Date().toISOString().split('T')[0]}
-          max={new Date(new Date().setMonth(new Date().getMonth() + 60)).toISOString().split('T')[0]}
+          min={toLocalDateInputValue(today)}
+          max={toLocalDateInputValue(maxAppointmentDate)}
         />
       </div>
 
