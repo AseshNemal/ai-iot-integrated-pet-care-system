@@ -1,6 +1,15 @@
 # IoT Pet Health Tracker Simulator (SE4030 test/demo aid)
 
-The original system used a physical micro:bit/SIM800L-based Pet Health Tracker. Because the physical prototype is not available during the current SE4030 security assessment, a software simulator is provided to reproduce the original telemetry format and device behavior for repeatable testing. The simulator does not replace the original implementation and does not remediate existing security vulnerabilities. Security issues are intentionally preserved for baseline testing and will be addressed separately during the remediation phase.
+The original system used a physical micro:bit/SIM800L-based Pet Health Tracker. Because the physical prototype is not available during the current SE4030 security assessment, a software simulator is provided to reproduce the original telemetry format and device behavior for repeatable testing. The simulator does not replace the original implementation.
+
+> **Update (V28 telemetry-authentication remediation):** the Cloudflare Worker
+> ingestion endpoint now requires an authenticated, signed request (see
+> "Security posture" below and
+> `security-assessment/remediation/V28-iot-telemetry-authentication.md`). The
+> simulator's `ingestion` mode signs its requests accordingly. The Pet Tracker
+> **read/dashboard-access** half of V28 was fixed separately and earlier — see
+> `security-assessment/remediation/V28-pet-tracker-access-control.md` — and is
+> unaffected by this update.
 
 ## Why this exists
 
@@ -27,8 +36,8 @@ The `NODE_ENV` check exists purely to keep this new testing utility from ever co
 
 Set `IOT_SIMULATOR_MODE` in `backend/.env` (see `backend/.env.example`):
 
-- **`ingestion`** (default, the documented assignment mode) — the simulator POSTs telemetry to `IOT_SIMULATOR_INGEST_URL`, i.e. the same Worker/ingestion endpoint the physical device would call. The simulator never talks to Firebase directly in this mode, exactly like the real micro:bit doesn't.
-- **`direct-firebase`** — the simulator writes straight to the Firebase Realtime Database `petcare` node, bypassing the Worker entirely. This is a **local dashboard-testing fallback only**, for when no ingestion endpoint is deployed or reachable — it is not the mode used for SE4030 security testing.
+- **`ingestion`** (default, the documented assignment mode) — the simulator signs its telemetry and POSTs the signed envelope to `IOT_SIMULATOR_INGEST_URL`, i.e. the same authenticated Worker/ingestion endpoint the physical device must call since the V28 telemetry-authentication remediation. The simulator never talks to Firebase directly in this mode, exactly like the real micro:bit doesn't.
+- **`direct-firebase`** — the simulator writes straight to the Firebase Realtime Database `petcare` node, bypassing the Worker (and therefore bypassing authentication) entirely. This is a **local dashboard-testing fallback only**, for when no ingestion endpoint is deployed or reachable — it is not the mode used for SE4030 security testing, and it is not representative of the authenticated path.
 
 ```
 ENABLE_IOT_SIMULATOR=true
@@ -36,13 +45,16 @@ ENABLE_IOT_SIMULATOR=true
 # default, documented assignment mode
 IOT_SIMULATOR_MODE=ingestion
 IOT_SIMULATOR_INGEST_URL=https://<your-worker>.workers.dev
+# Required for ingestion mode. Must match the Worker's own INGEST_SHARED_SECRET
+# (a Cloudflare secret, configured in the Cloudflare dashboard — not in this repo).
+IOT_SIMULATOR_DEVICE_SECRET=
 
 # only read when IOT_SIMULATOR_MODE=direct-firebase
 IOT_SIMULATOR_FIREBASE_DATABASE_URL=https://<your-database-name>.firebasedatabase.app
 IOT_SIMULATOR_FIREBASE_DATABASE_SECRET=            # optional, only if your RTDB rules require it
 ```
 
-These are new, optional, simulator-only variables — no existing required variable was changed, and no real project credentials are included in this repo; you supply your own ingestion URL / database URL / secret locally.
+These are new, optional, simulator-only variables — no existing required variable was changed, and no real project credentials are included in this repo; you supply your own ingestion URL / database URL / shared secret locally, matching whatever you configure on the Worker side.
 
 ## Architecture
 
@@ -80,7 +92,26 @@ To pair a simulated device with a pet, use the **existing** pairing UI exactly a
 
 The simulator publishes the exact field set `deviceData.js` already expects in each `petcare` child record: `Device ID`, `Latitude`, `Longitude`, `Altitude`, `Battery`, `En_temperature`, `en_humidity`, `AirQuality`, `Temperature`, `hartrate`, `step`, `timestamp`. Field names (including the `hartrate` spelling and `AirQuality`/`en_humidity` casing) were copied as-is from the dashboard's parsing code, not corrected.
 
-This same payload is sent regardless of mode — in `ingestion` mode it is the POST body sent to `IOT_SIMULATOR_INGEST_URL`, unmodified by the simulator itself (the Worker is expected to add its own `Time` field and forward to Firebase, exactly as it does for the real device); in `direct-firebase` mode it is written straight to the `petcare` node.
+This same telemetry field set is used regardless of mode. In `direct-firebase` mode it is written straight to the `petcare` node unmodified. In `ingestion` mode it is no longer sent as a bare POST body: it is signed and wrapped in an authentication envelope —
+
+```json
+{
+  "deviceId": "900001",
+  "timestamp": 1735113600000,
+  "nonce": "6f1c9e2a...",
+  "telemetry": "{\"Device ID\":\"900001\",\"Latitude\":...}",
+  "signature": "b6e1c4..."
+}
+```
+
+— where `telemetry` is the exact telemetry JSON as a string (see
+`buildCanonicalMessage`/`signTelemetry` in `iotSimulatorService.js`), and
+`signature` is an HMAC-SHA256 over `deviceId + "\n" + timestamp + "\n" + nonce +
+"\n" + telemetry`, keyed by `IOT_SIMULATOR_DEVICE_SECRET`. The Worker verifies
+this envelope, and only the inner `telemetry` object (with its own `Time` field
+added) is ever forwarded to Firebase — see
+`security-assessment/remediation/V28-iot-telemetry-authentication.md` for the
+full design.
 
 Two behaviors were matched deliberately so simulated data renders correctly, per the "necessary for compatibility" allowance:
 
@@ -89,25 +120,40 @@ Two behaviors were matched deliberately so simulated data renders correctly, per
 
 Generated values are randomised walks around plausible baselines (e.g. body temperature ~38°C, heart rate raw value ~350-600 so the dashboard's `hartrate/5` display lands around 70-120 BPM, battery slowly draining from 100%, GPS drifting slightly around a fixed origin) — realistic enough for dashboard/chart demonstration, not a scientific sensor model.
 
-## Security posture — nothing here was fixed
+## Security posture
 
-This branch is explicitly **not** security remediation. To keep the vulnerable baseline intact for before/after evidence:
-
-- The simulator's own HTTP API (`/api/simulator/*`) has no authentication, authorization, rate limiting, or CSRF protection.
-- No device authentication, signing, API keys, or replay protection were added to the simulated telemetry path (in either mode), matching the real device's current behavior.
-- No existing authentication, session, Passport, Firebase rule, CORS, or rate-limiting behavior was changed anywhere in the codebase.
-- In `ingestion` mode the simulator holds no Firebase credentials at all — it only knows the ingestion URL, the same as the real device — so it introduces no new path to Firebase beyond what already exists.
-- The `ENABLE_IOT_SIMULATOR` + `NODE_ENV != production` mounting guard is protection for this new testing utility only (keeping it from ever running where real users are), not a remediation of any vulnerability in the original application.
-- Pre-existing weaknesses observed while building this (documented here, intentionally left as-is):
-  - The Firebase Realtime Database `petcare` node has no server-side ownership check — anything that can reach it (the real worker, a simulator running in `direct-firebase` mode, or any other client with the database URL) can write telemetry under any `Device ID`, including one already paired to another user's pet. Firebase RTDB security rules are not defined in this repository (see main `README.md`).
-  - `deviceData.js` fetches the entire `petcare` node on every page load and filters client-side; it does not scope the read to the requested device server-side.
-  - The Cloudflare Worker relay (`Pet Health Tracker/worker(cloudflare).js`) embeds a placeholder legacy database secret directly in the worker source as a comment/example, and accepts any POST body from any caller with no device authentication — reflecting the same "no real device auth" pattern the `ingestion` mode simulator deliberately does not touch.
-
-These items are candidates for the later remediation phase, not for this branch.
+- **Ingestion (Worker) authentication — fixed.** The Cloudflare Worker
+  (`Pet Health Tracker/worker(cloudflare).js`) now requires a valid HMAC-SHA256
+  signature, a fresh timestamp, and a not-previously-seen nonce before it will
+  forward any telemetry to Firebase; the simulator's `ingestion` mode signs its
+  requests accordingly. See
+  `security-assessment/remediation/V28-iot-telemetry-authentication.md` for the
+  full design, setup, and before/after test evidence, including the documented
+  shared-secret limitation for the simulator's arbitrary ad-hoc device IDs.
+- **Pet Tracker dashboard/read-access authorization — fixed separately.** See
+  `security-assessment/remediation/V28-pet-tracker-access-control.md`.
+- The simulator's own HTTP API (`/api/simulator/*`) still has no authentication,
+  authorization, rate limiting, or CSRF protection — it is a disposable local
+  test aid, not exposed in production (see the `ENABLE_IOT_SIMULATOR` +
+  `NODE_ENV != production` guard below), and was out of scope for the V28 fixes
+  above (which concern the *telemetry* ingestion path, not this control API).
+- `direct-firebase` mode remains **unauthenticated by design** — it bypasses
+  the Worker entirely for local dashboard testing only, and was intentionally
+  left unchanged; it is not the mode used for SE4030 security testing.
+- The `ENABLE_IOT_SIMULATOR` + `NODE_ENV != production` mounting guard is
+  protection for this testing utility only (keeping it from ever running where
+  real users are).
+- Remaining, still-open items (documented, not fixed by either V28 remediation):
+  - Firebase RTDB security rules are not defined in this repository (see main
+    `README.md`); deployment-side rule enforcement could not be verified from
+    source.
+  - `backend/src/API/routes/dataRoutes.js` and `pet_tracker.js` remain
+    unauthenticated dead code (not mounted in `backend/src/app.js`).
 
 ## Known limitations of the simulator itself
 
 - In-memory device registry only — no persistence across backend restarts, and no cross-process sharing if the backend is horizontally scaled.
 - No validation that a created simulator `deviceId` is actually linked to a `Pet` document; starting a device that was never paired simply writes telemetry no dashboard currently reads.
 - No automatic cleanup of `petcare` history; simulated readings accumulate in Firebase like real ones would, so periodically clearing test data is left to the operator.
-- `ingestion` mode (the default) requires a reachable `IOT_SIMULATOR_INGEST_URL` (e.g. a deployed copy of `Pet Health Tracker/worker(cloudflare).js`). If none is available, switch `IOT_SIMULATOR_MODE=direct-firebase` for local dashboard testing only — that mode is not representative of the real ingestion path and should not be used as the basis for SE4030 findings.
+- `ingestion` mode (the default) requires a reachable `IOT_SIMULATOR_INGEST_URL` (e.g. a deployed copy of `Pet Health Tracker/worker(cloudflare).js`) and a matching `IOT_SIMULATOR_DEVICE_SECRET`. If none is available, switch `IOT_SIMULATOR_MODE=direct-firebase` for local dashboard testing only — that mode is not representative of the real (authenticated) ingestion path and should not be used as the basis for SE4030 findings.
+- The simulator signs with one shared secret for every device ID it creates. This is a documented limitation (see the remediation doc), not true per-device identity — it is adequate for exercising the Worker's authentication logic in testing, but the one real physical tracker should be provisioned its own per-device secret in the Worker's `DEVICE_SECRETS` KV binding instead.

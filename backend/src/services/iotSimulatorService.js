@@ -1,4 +1,5 @@
 import axios from "axios";
+import crypto from "crypto";
 import logger from "../utils/logger";
 
 // ---------------------------------------------------------------------------
@@ -10,13 +11,16 @@ import logger from "../utils/logger";
 //   [this simulator] -> Cloudflare Worker -> Firebase Realtime Database ("petcare") -> dashboard
 //
 // Two publish modes (IOT_SIMULATOR_MODE, see docs/IOT_SIMULATOR.md):
-//   - "ingestion" (default): POSTs the telemetry payload to IOT_SIMULATOR_INGEST_URL,
-//     i.e. the same Worker/ingestion endpoint the real device would call. The
-//     simulator never touches Firebase directly in this mode, exactly like the
-//     real micro:bit doesn't.
+//   - "ingestion" (default): POSTs a signed telemetry envelope to
+//     IOT_SIMULATOR_INGEST_URL, i.e. the same authenticated Worker/ingestion
+//     endpoint a real device must call since the V28 telemetry-authentication
+//     remediation (security-assessment/remediation/V28-iot-telemetry-authentication.md).
+//     The simulator never touches Firebase directly in this mode, exactly like
+//     the real micro:bit doesn't.
 //   - "direct-firebase": writes straight to the Firebase Realtime Database,
-//     bypassing the Worker. A local dashboard-testing fallback only, for when
-//     no ingestion endpoint is deployed/reachable.
+//     bypassing the Worker (and therefore bypassing authentication entirely).
+//     A local dashboard-testing fallback only, for when no ingestion endpoint
+//     is deployed/reachable — not representative of the authenticated path.
 //
 // State is in-memory only (Map), by design: this is a disposable test aid,
 // not a persisted device registry, and it does not touch the Pet/Mongo
@@ -45,6 +49,51 @@ function getIngestUrl() {
     );
   }
   return ingestUrl;
+}
+
+// Shared secret this simulator signs with in "ingestion" mode. Must match the
+// Worker's INGEST_SHARED_SECRET (Cloudflare dashboard secret, not this repo)
+// for the Worker to accept simulator-originated telemetry. This is the
+// documented shared-secret limitation, not per-device identity: it is only
+// good enough to let the simulator (which mints arbitrary ad-hoc device IDs
+// for testing) prove "I know the ingestion secret", not "I am device X". The
+// one real physical tracker should instead be provisioned its own entry in
+// the Worker's DEVICE_SECRETS KV binding, keyed by its real Device ID — see
+// the Worker's own header comment and the remediation doc.
+function getDeviceSharedSecret() {
+  const secret = process.env.IOT_SIMULATOR_DEVICE_SECRET;
+  if (!secret) {
+    throw new Error(
+      "IOT_SIMULATOR_DEVICE_SECRET is not set. Add it to backend/.env (see .env.example) — it must match the ingestion Worker's INGEST_SHARED_SECRET to use the authenticated IoT simulator in ingestion mode."
+    );
+  }
+  return secret;
+}
+
+function buildCanonicalMessage(deviceId, timestamp, nonce, telemetryRaw) {
+  return `${deviceId}\n${timestamp}\n${nonce}\n${telemetryRaw}`;
+}
+
+// Signs a telemetry payload into the envelope the authenticated Worker
+// expects: { deviceId, timestamp, nonce, telemetry (raw JSON string),
+// signature }. The telemetry field is sent as the exact JSON string that was
+// signed, not re-parsed/re-serialized, so the Worker verifies the identical
+// bytes this function signed.
+function signTelemetry(deviceId, telemetryPayload) {
+  const secret = getDeviceSharedSecret();
+  const timestamp = Date.now();
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const telemetryRaw = JSON.stringify(telemetryPayload);
+  const canonicalMessage = buildCanonicalMessage(String(deviceId), timestamp, nonce, telemetryRaw);
+  const signature = crypto.createHmac("sha256", secret).update(canonicalMessage).digest("hex");
+
+  return {
+    deviceId: String(deviceId),
+    timestamp,
+    nonce,
+    telemetry: telemetryRaw,
+    signature,
+  };
 }
 
 function getFirebaseRestUrl() {
@@ -126,10 +175,11 @@ async function publishTelemetry(deviceId, readings) {
       params: authSecret ? { auth: authSecret } : undefined,
     });
   } else {
-    // "ingestion": hand the raw telemetry to the configured Worker/ingestion
-    // endpoint, same as the real device would - no Firebase URL or secret
-    // involved on this side.
-    await axios.post(getIngestUrl(), payload);
+    // "ingestion": sign the telemetry the same way an authenticated device
+    // must, then hand the envelope to the configured Worker/ingestion
+    // endpoint - no Firebase URL or secret involved on this side.
+    const envelope = signTelemetry(deviceId, payload);
+    await axios.post(getIngestUrl(), envelope);
   }
 
   return payload;
