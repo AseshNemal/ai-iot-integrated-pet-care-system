@@ -36,9 +36,13 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 - HR and financial management pages, including expense tracking (`Expense` model, `expenseRoutes`)
 
 ### Authentication & Administration
-- Google OAuth login (Passport.js) alongside a separate employee login flow
-- Session-based authentication using `express-session` with a MongoDB-backed session store
-- Administrative dashboards for pets, products, and adoption ads
+
+- Google OAuth login (Passport.js) and employee/administrator credential login both use server-side sessions
+- Session cookies are managed with `express-session` and a MongoDB-backed session store; the React Axios client sends credentials with API requests
+- Privileged pet, medical-record, employee, product, order, expense, feedback, notification, and Gemini endpoints reject unauthenticated requests with HTTP `401`
+- Adoption-ad routes under `/PetAd/admin/*` additionally require the authenticated employee to have the `Admin` role and return HTTP `403` for insufficient privileges
+- Employee and administrator login regenerates the session before storing identity data, and the stored session/response does not include the password
+- Employee and administrator logout clears the server-side employee session as well as the corresponding browser state
 
 ### Notifications & Feedback
 - In-app notifications
@@ -116,6 +120,16 @@ npm start      # run once, without nodemon
 ```
 The server listens on the port in `PORT`, defaulting to `8090`.
 
+#### Employee and Administrator Login
+
+Employee and administrator accounts are read from the MongoDB `Employee` collection. Both interfaces authenticate through `POST /employee/login`, which establishes the server-side session used by protected API routes.
+
+The administrator interface only accepts an employee whose `role` is exactly `Admin`. There are no built-in or client-side `admin`/`admin` credentials. Provision the first administrator through a trusted database or administrative process; do not expose public role assignment or place administrator credentials in this README or an environment file.
+
+After upgrading from the earlier client-only login behavior, log out, clear any stale login data in the browser if necessary, and sign in again so that a valid backend session is created. Direct API clients must retain and send the session cookie with subsequent protected requests. The frontend is already configured to do this.
+
+> **Current limitation:** employee passwords are still stored and compared using the legacy plaintext implementation. Password hashing is a separate unresolved security item and must be implemented before this login is considered production-ready.
+
 ### Frontend Setup
 ```bash
 cd frontend
@@ -145,6 +159,9 @@ The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a 
 - If a secret is committed, rotate or revoke it immediately. Deleting it in a later commit does not remove it from Git history.
 
 ## Notes on Current Implementation
+
+- The V02 missing-authentication remediation is applied to the privileged routes listed above. Public browsing and other intentionally public endpoints remain accessible without a session.
+- The authentication middleware supports both Passport-based Google sessions and employee/administrator sessions, preventing intermittent `User not authenticated` responses when navigating after a successful employee login.
 - The Gemini-based AI assistant currently powers the pet training module only; other AI-labeled features (e.g. the chatbot) do not call Gemini.
 - The checkout flow captures payment details in the UI but does not process payments through an external gateway.
 - Firebase Realtime Database is used for IoT readings; the application's main records and login sessions remain in MongoDB.
