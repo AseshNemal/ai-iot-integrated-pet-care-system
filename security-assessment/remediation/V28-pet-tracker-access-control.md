@@ -4,7 +4,7 @@
 **Student ID:** IT23236264
 **Module:** SE4030 Secure Software Development
 **Project:** AI- and IoT-Integrated Pet Care System
-**Status:** Before Remediation
+**Status:** Remediated and Verified
 
 > **Classification note:** This document covers the runtime/access-control aspect of the
 > existing **V28 — Unauthenticated IoT Telemetry Ingestion / Sensor Data Spoofing** finding
@@ -216,6 +216,152 @@ device that isn't theirs.
   ownership only in the browser;
 - review Firebase RTDB access controls separately.
 
-## After-Remediation Verification
+## Remediation Implemented
 
-Pending.
+**Backend — `backend/src/API/routes/pets.js`:** added
+`GET /pet/tracker/:deviceId`, guarded by the existing `authenticate` session
+middleware (`backend/src/API/middleware/auth.middlewere.js`, already proven
+elsewhere in this file):
+
+1. `authenticate` rejects any request without a valid session with **401**
+   before any route logic runs.
+2. The route derives the caller's identity from `req.user` (never from the
+   URL or request body) and looks up the `Pet` document for the requested
+   `deviceId`.
+3. Unknown device → **404**.
+4. Known device whose `Pet.userId` does not match the caller → **403**.
+5. Only when the caller owns the device does the server fetch the Realtime
+   Database `petcare` node itself (server-to-server, using the same
+   `IOT_SIMULATOR_FIREBASE_DATABASE_URL`-style config the simulator already
+   used to *write* telemetry — see new `FIREBASE_RTDB_URL` /
+   `FIREBASE_RTDB_SECRET` in `backend/.env.example`), filters it down to
+   **only** the requested device's records, and returns just those.
+
+**Frontend — `frontend/src/components/deviceData.js`:** removed the direct
+`firebase/database` import and the `onValue(ref(realtimeDB, "petcare"), ...)`
+listener entirely. The component now polls the authorized backend endpoint
+(`axios.get` to `/pet/tracker/:deviceId` every 5s, mirroring the existing poll
+pattern in `PetTracker.js`) and renders one of five states: `loading`,
+`unauthenticated` (prompts login), `forbidden`, `not-found`, or `ok`
+(the existing dashboard UI, now fed only with data the backend already
+authorized). This is explicitly a **UX convenience, not the security
+boundary** — the boundary is the backend check above, per the instruction to
+avoid relying solely on a frontend guard.
+
+This satisfies the required design:
+
+```
+User requests tracker for a device
+        ↓
+Backend requires authenticated session      → no session      → 401
+        ↓
+Backend derives user ID from req.user
+        ↓
+Backend verifies a pet owned by req.user has that deviceId
+        ↓ no matching Pet                    → 404
+        ↓ Pet exists, owned by someone else  → 403
+        ↓ Pet exists, owned by req.user      → 200, filtered telemetry only
+```
+
+## Automated Tests
+
+Added `backend/src/API/routes/__tests__/petTracker.test.js` (Jest + Supertest,
+newly added as backend dev dependencies — no test framework previously
+existed in this project). Mocks `Pet` and the RTDB `axios` call so the tests
+exercise only the route's own authorization logic:
+
+| Scenario | Expected | Result |
+|---|---|---|
+| Unauthenticated request | 401, `Pet.findOne` never called | **Pass** |
+| Owner requests their own device | 200, only that device's records returned | **Pass** |
+| Authenticated user requests another user's device | 403, Firebase never called | **Pass** |
+| Unknown/unpaired device | 404, Firebase never called | **Pass** |
+
+```
+$ npx jest
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+```
+
+## After-Remediation Test
+
+Repeated the same manual test used before the fix, against the same
+controlled device (`900001`) on the same running local dev stack.
+
+## After-Remediation Results
+
+- **Logged out → `/pet/900001`:** reproduced live in a logged-out browser tab
+  (nav bar shows "Login"). The dashboard no longer renders any telemetry —
+  it now shows "Please log in to view this pet's tracker." with a link to
+  `/login`, and the network call to the backend returns 401. Screenshot:
+  `security-assessment/evidence/V28/after-unauthenticated-blocked.jpg`.
+- **Owner → own device** and **authenticated user A → user B's device:**
+  verified via the automated test suite above (`petTracker.test.js`), which
+  exercises the same `pets.js` route handler and the same `Pet.findOne`
+  ownership comparison the live server uses — 200 with only the owner's
+  records for the owner, 403 with no Firebase call for a non-owner. As noted
+  in **Actual Before-Fix Behaviour**, this project's only end-user login is
+  Google OAuth against real Google accounts, which was not scripted against a
+  second real account in order to keep all test evidence synthetic; the
+  automated tests are the recorded proof for these two scenarios rather than
+  a second live browser session, consistent with not forcing a manual
+  reproduction that isn't safely scriptable here.
+- **Unknown device:** covered by the automated test (404); not separately
+  reproduced live for the same reason (would require a live session to reach
+  past the 401 check first).
+
+```
+logged out              → denied/login   (confirmed live + by design: authenticate runs first)
+owner                    → telemetry visible (confirmed by automated test)
+other authenticated user → denied             (confirmed by automated test)
+unknown device           → denied (404)       (confirmed by automated test)
+```
+
+## Security Result
+
+An unauthenticated visitor, or an authenticated user who does not own the
+requested device, can no longer obtain any Pet Tracker telemetry by changing
+the device ID in the `/pet/:deviceId` URL. The frontend no longer has a code
+path that reads the shared `petcare` Realtime Database node directly, so
+there is nothing left in the browser for a URL-only attacker to exploit
+against this dashboard specifically.
+
+## Remaining Scope
+
+Explicitly **not** addressed by this remediation (tracked separately, still
+open):
+
+- **Cloudflare Worker ingestion / spoofing** (the other half of V28): the
+  Worker at `Pet Health Tracker/worker(cloudflare).js` still accepts any POST
+  body from any caller with no device authentication or payload validation.
+  Unchanged by this fix.
+- **`frontend/database.rules.json` (`.read: true, .write: true`)** — this
+  remains exactly as found. This remediation's new backend endpoint reads the
+  RTDB via a plain server-to-server REST call (no Firebase Admin credentials
+  are configured in this environment), so it currently relies on the same
+  public rules the browser previously used directly — the backend is simply
+  the only caller the app itself will make. **Deployment-side Firebase rule
+  enforcement could not be verified from repository source and remains a
+  separate deployment verification item.** Tightening these rules (e.g. to
+  require a Firebase Admin credential or a per-device auth secret for both
+  reads and writes) was not done as part of this fix because it would also
+  need to keep the legitimate simulator/Worker *write* path working, and
+  provisioning that credential is outside this repository and outside what
+  could be safely tested here.
+- **`backend/src/API/routes/pet_tracker.js` and `dataRoutes.js`** — both
+  remain unauthenticated and both remain unmounted in `backend/src/app.js`
+  (dead code). Left as-is rather than deleted, since removing dead code was
+  not requested and is outside this remediation's scope; flagged here so they
+  are not mistaken for an active, authenticated surface.
+- **`frontend/src/components/temperatureDatas.js`** — a separate, unrouted
+  placeholder component also importing `../firebase` directly (and using an
+  incompatible legacy Firebase v8-style call, `realtimeDB.ref(...)`, against
+  the v9 modular SDK actually configured in `frontend/src/firebase.js`, so it
+  would throw if ever rendered). Not reachable from `App.js`, not part of the
+  V28 finding's evidence, and not modified here.
+- IoT telemetry request signing, device HMAC authentication, replay
+  protection, telemetry range validation, timestamp integrity, and simulator
+  security remain out of scope, per the original remediation plan.
+
+**Remediation owner / verification owner:**
+Asesh Nemal — IT23236264
