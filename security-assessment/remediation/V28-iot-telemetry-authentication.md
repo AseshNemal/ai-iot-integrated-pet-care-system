@@ -5,7 +5,7 @@
 **Module:** SE4030 Secure Software Development
 **Project:** AI- and IoT-Integrated Pet Care System
 **Finding:** V28 — Unauthenticated IoT Telemetry Ingestion / Spoofing
-**Status:** Remediation Implemented — Verification Pending
+**Status:** Remediated and Verified
 
 > **Classification note:** V28 has two independent halves. The dashboard/read-access
 > half (an unauthenticated visitor viewing another pet's telemetry) was already fixed
@@ -330,7 +330,152 @@ assessment** (consistent with `docs/IOT_SIMULATOR.md`'s existing statement to
 that effect for the whole assignment). No claim of physical-device runtime
 verification is made.
 
----
+## After-Remediation Test
 
-*(Sections below — After-Remediation Test, Results, Security Result, and
-Remaining Limitations — are added once verification is complete.)*
+Repeated the exact same spoofing test used before, against the fixed
+`Pet Health Tracker/worker(cloudflare).js` (the live, remediated source — not
+a snapshot).
+
+Script: `security-assessment/evidence/V28-ingestion/after-fix-spoof-test.js`.
+
+## After-Remediation Results
+
+```
+$ node after-fix-spoof-test.js
+=== V28 AFTER-FIX reproduction #1: exact same spoofing attempt as before ===
+Request body (identical fabricated payload, no auth fields):
+{
+  "Device ID": "1001",
+  ...
+}
+
+Worker response status: 401
+Worker response body: {"error":"Missing or invalid authentication fields"}
+Outbound calls to Firebase so far: 0
+
+RESULT #1: FIXED — the fabricated, unsigned payload was rejected before reaching Firebase.
+
+=== V28 AFTER-FIX reproduction #2a: unsupported HTTP method (GET) ===
+Worker response status: 405, Allow header: POST
+Worker response body: {"error":"Method Not Allowed"}
+Outbound calls to Firebase so far: 0
+RESULT #2a: unsupported method rejected with 405, never reached Firebase.
+
+=== V28 AFTER-FIX reproduction #2b: oversized request body ===
+Worker response status: 413
+Worker response body: {"error":"Payload Too Large"}
+Outbound calls to Firebase so far: 0
+RESULT #2b: oversized request rejected with 413, never reached Firebase.
+
+=== V28 AFTER-FIX reproduction #3: legitimate, correctly signed request ===
+...
+Worker response status: 200
+Worker response body: {"name":"-StubbedFirebasePushId"}
+Outbound calls to Firebase total: 1
+
+RESULT #3: legitimate, correctly authenticated telemetry still reaches Firebase normally.
+```
+
+Full captured output:
+`security-assessment/evidence/V28-ingestion/after-fix-spoof-test-output.txt`
+
+Automated test coverage — `backend/src/API/routes/__tests__/workerIngestionAuth.test.js`
+(Jest, loads and executes the actual Worker source via a transpile-and-eval
+harness against real Fetch API `Request` objects, not a reimplementation):
+
+| Scenario | Expected | Result |
+|---|---|---|
+| Missing authentication fields | 401, Firebase never called | **Pass** |
+| Wrong signature | 401, Firebase never called | **Pass** |
+| Payload modified after signing | 401, Firebase never called | **Pass** |
+| Stale timestamp (10 min old) | 401, Firebase never called | **Pass** |
+| Replayed request (same deviceId+nonce twice) | 1st: 200; 2nd: 401, Firebase called only once total | **Pass** |
+| Telemetry `Device ID` mismatched vs. authenticated `deviceId` | 401, Firebase never called | **Pass** |
+| `DEVICE_SECRETS` absent + valid shared secret | 200, forwarded to Firebase with `Time` added | **Pass** |
+| `DEVICE_SECRETS` configured + known device + correct per-device secret | 200, forwarded to Firebase | **Pass** |
+| `DEVICE_SECRETS` configured + unknown device (shared secret also present) | 401 "Unknown device", Firebase never called — **no fallback** | **Pass** |
+| GET / PUT / PATCH / DELETE (4 cases) | 405, `Allow: POST`, Firebase never called | **Pass** (×4) |
+| Request body over the default 32 KiB limit | 413, Firebase never called | **Pass** |
+| Request body within a custom `MAX_INGEST_BODY_BYTES` | 200, forwarded to Firebase | **Pass** |
+| Simulator-produced envelope verified by the real Worker (interoperability) | 200, forwarded to Firebase | **Pass** |
+
+```
+$ npx jest
+Test Suites: 2 passed, 2 total
+Tests:       20 passed, 20 total
+```
+
+(2 suites = this file's 16 tests plus the pre-existing, unchanged
+`petTracker.test.js` 4 tests from the earlier V28 access-control remediation —
+confirming that fix is still intact.)
+
+## Security Result
+
+A caller that does not know a device's secret (per-device or the shared
+fallback) can no longer inject telemetry for that device: the Worker rejects
+missing signatures, wrong signatures, tampered payloads, stale timestamps, and
+replayed requests before ever writing to Firebase. The exact fabricated,
+zero-authentication payload that previously reached the Firebase write step
+unconditionally is now rejected with 401 and never reaches it. Legitimate,
+correctly signed telemetry (from the simulator's `ingestion` mode, and by
+design from the real device once its firmware implements the documented
+protocol) continues to flow through unchanged.
+
+## Remaining Limitations
+
+- **Shared secret, not universal per-device identity — but never a silent
+  downgrade.** When `DEVICE_SECRETS` is **not configured at all**,
+  `INGEST_SHARED_SECRET` is a single value shared by every device: it proves
+  only "knows the secret", not distinct per-device identity, and a leaked
+  shared secret compromises every device relying on it. This is the
+  explicitly-allowed "simpler shared ingestion secret" fallback, documented
+  here as a limitation rather than presented as per-device identity. Once
+  `DEVICE_SECRETS` **is** configured, it is authoritative: a `deviceId` with
+  no entry in it is rejected (`401 "Unknown device"`) and never silently
+  falls back to the shared secret, even if `INGEST_SHARED_SECRET` also
+  happens to be set (`Pet Health Tracker/worker(cloudflare).js:136-151`,
+  `:211-220`) — verified in
+  `backend/src/API/routes/__tests__/workerIngestionAuth.test.js` by a test
+  that configures both simultaneously and confirms the unregistered device is
+  still rejected. The one real physical tracker should be provisioned its own
+  `DEVICE_SECRETS` entry; the simulator (arbitrary ad-hoc device IDs) is
+  expected to keep using the shared-secret path by not having
+  `DEVICE_SECRETS` configured for it at all.
+- **Best-effort replay protection, not atomic.** If `NONCE_STORE` is not
+  configured, replay protection falls back to an in-memory `Map` scoped to a
+  single Worker isolate (`worker(cloudflare).js:56-59`) — it will not catch a
+  replay routed to a different edge location or after an isolate restart.
+  **Even with `NONCE_STORE` configured, protection is not atomic**:
+  `isReplay()` (`worker(cloudflare).js:153-170`) performs a `get()` followed
+  by a separate `put()` on the KV namespace, with no compare-and-set. Two
+  requests carrying the identical `deviceId:nonce` arriving concurrently (a
+  genuine retry, or a deliberate race by an attacker who captured a valid
+  request) can both observe "not seen yet" before either write lands, so both
+  could be accepted. Cloudflare KV has no atomic check-and-set primitive;
+  closing this would require a Durable Object (or an equivalent atomic store)
+  serializing nonce checks per device. **A Durable Object was deliberately
+  not added in this remediation** (out of scope for this branch). This
+  remediation does **not** claim complete protection against concurrent
+  replay — only against a replay that arrives after the first request has
+  already been recorded.
+- **No physical-device runtime verification.** As documented above, the
+  physical micro:bit/SIM800L prototype was not run as part of this
+  remediation because it is unavailable during this assessment, and no
+  firmware source exists in this repository to modify. Verification used the
+  simulator only.
+- **Firebase RTDB rules unchanged and unverified.** As already noted in
+  `docs/IOT_SIMULATOR.md` and the prior access-control remediation, this
+  repository does not define Firebase Realtime Database security rules, and
+  whatever is actually deployed could not be confirmed from source. This
+  remediation authenticates the *path into* Firebase (the Worker) but does not
+  change or verify database-level rules.
+- **`backend/src/API/routes/dataRoutes.js` and `pet_tracker.js`** remain
+  unauthenticated, unmounted dead code, unchanged by this fix (confirmed not
+  part of the active ingestion path — see **Root Cause**).
+- **Pet Tracker dashboard/read-access authorization** — unchanged and
+  preserved exactly as fixed in
+  `security-assessment/remediation/V28-pet-tracker-access-control.md`; not
+  touched by this remediation.
+
+**Remediation owner / verification owner:**
+Asesh Nemal — IT23236264
