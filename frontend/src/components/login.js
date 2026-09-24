@@ -1,19 +1,39 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    
-    console.log("Email:", email, "Password:", password);
+    setError("");
+    setLoading(true);
 
-    if(email === "admin" && password === "admin"){
-      alert("Login successful!");
+    try {
+      const response = await axios.post("http://localhost:8090/employee/login", {
+        username: email,
+        password
+      });
+
+      if (response.data.user?.role?.toLowerCase() !== "admin") {
+        await axios.post("http://localhost:8090/employee/logout");
+        setError("This account does not have administrator access.");
+        return;
+      }
+
+      localStorage.setItem("employeeData", JSON.stringify(response.data.user));
       window.location.href = "/adminDashboard";
+    } catch (loginError) {
+      setError(
+        loginError.response?.data?.error ||
+        "Login failed. Please check your credentials."
+      );
+    } finally {
+      setLoading(false);
     }
-
   };
 
   return (
@@ -75,6 +95,11 @@ function Login() {
                 <div className="col-12 col-lg-5">
                   <form onSubmit={handleSubmit}>
                     <div className="row gy-3">
+                      {error && (
+                        <div className="col-12">
+                          <div className="alert alert-danger" role="alert">{error}</div>
+                        </div>
+                      )}
                       <div className="col-12">
                         <div className="form-floating mb-3">
                           <input
@@ -135,8 +160,8 @@ function Login() {
                       </div>
                       <div className="col-12">
                         <div className="d-grid">
-                          <button className="btn btn-dark" type="submit">
-                            Log in
+                          <button className="btn btn-dark" type="submit" disabled={loading}>
+                            {loading ? "Logging in..." : "Log in"}
                           </button>
                         </div>
                       </div>

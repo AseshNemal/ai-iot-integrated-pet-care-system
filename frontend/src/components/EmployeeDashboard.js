@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../styles/EmployeeDashboard.css";
 
 // Mock data for appointments
@@ -70,9 +71,15 @@ function EmployeeDashboard() {
     setUpcomingAppointments(roleAppointments.filter(apt => apt.date !== today));
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("employeeData");
-    navigate("/employee-login");
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:8090/employee/logout");
+    } catch (error) {
+      console.error("Employee logout error:", error);
+    } finally {
+      localStorage.removeItem("employeeData");
+      navigate("/employee-login");
+    }
   };
 
   if (!employeeData) {
@@ -215,4 +222,4 @@ function EmployeeDashboard() {
   );
 }
 
-export default EmployeeDashboard; 
+export default EmployeeDashboard;

@@ -10,6 +10,19 @@ function Dashboard() {
   const [receivedData, setReceivedData] = useState([])
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0)
   const [loading, setLoading] = useState(false)
+
+  const handleAdminLogout = async (event) => {
+    event.preventDefault()
+
+    try {
+      await axios.post("http://localhost:8090/employee/logout")
+    } catch (error) {
+      console.error("Admin logout error:", error)
+    } finally {
+      localStorage.removeItem("employeeData")
+      window.location.href = "/login"
+    }
+  }
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [sortField, setSortField] = useState("appointmentCount")
@@ -700,9 +713,9 @@ function Dashboard() {
         <div className="navbar-brand">Pet Care Admin</div>
         <div className="navbar-user">
           <span>Admin User</span>
-          <Link to="/" className="logout-link">
+          <a href="/login" className="logout-link" onClick={handleAdminLogout}>
             <i className="fas fa-sign-out-alt"></i> Logout
-          </Link>
+          </a>
         </div>
       </div>
       <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>

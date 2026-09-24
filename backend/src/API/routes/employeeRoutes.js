@@ -86,17 +86,48 @@ router.post('/login', async (req, res) => {
             return res.status(401).send({ error: "Invalid credentials" });
         }
         
-        // Return employee data without password
+        // Store only non-password employee data in the server-side session.
         const { password: _, ...employeeData } = employee.toObject();
-        
-        res.status(200).json({ 
-            message: "Login successful", 
-            user: employeeData 
+        req.session.regenerate((regenerateError) => {
+            if (regenerateError) {
+                console.error('Error regenerating employee session:', regenerateError);
+                return res.status(500).send({ error: "Unable to create login session" });
+            }
+
+            req.session.employee = employeeData;
+            req.session.save((sessionError) => {
+                if (sessionError) {
+                    console.error('Error saving employee session:', sessionError);
+                    return res.status(500).send({ error: "Unable to create login session" });
+                }
+
+                res.status(200).json({
+                    message: "Login successful",
+                    user: employeeData
+                });
+            });
         });
     } catch (error) {
         console.error('Error during employee login:', error);
         res.status(500).send({ error: error.message });
     }
+});
+
+// Employee/Admin Logout
+router.post('/logout', (req, res) => {
+    if (!req.session?.employee) {
+        return res.status(204).end();
+    }
+
+    delete req.session.employee;
+    req.session.save((error) => {
+        if (error) {
+            console.error('Error clearing employee session:', error);
+            return res.status(500).send({ error: "Unable to clear login session" });
+        }
+
+        res.status(200).json({ message: "Logout successful" });
+    });
 });
 
 // Delete Employee

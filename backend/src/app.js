@@ -62,8 +62,10 @@ app.get("/", (req, res) => {
 
 // ✅ Fix: Get session correctly
 app.get("/get-session", (req, res) => {
-    if (req.user) {
-        res.json({ sessionID: req.sessionID, user: req.user });
+    const currentUser = req.session?.employee || req.user;
+
+    if (currentUser) {
+        res.json({ sessionID: req.sessionID, user: currentUser });
     } else {
         res.json({ message: "No session found", user: null });
     }
