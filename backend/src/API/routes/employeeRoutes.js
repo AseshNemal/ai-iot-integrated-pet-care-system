@@ -3,7 +3,7 @@ const router = express.Router();
 const Employee = require('../model/Employee');
 const AppointmentData = require('../model/AppointmentData');
 const bcrypt = require('bcrypt');
-const { timingSafeEqual } = require('crypto');
+const { timingSafeEqual } = require('node:crypto');
 const { publicEmployee, requireEmployee, requireHrAdmin, requireTrustedOrigin } = require('../middleware/employeeAuth');
 const employeeLoginLimit = require('../middleware/employeeLoginLimit');
 
@@ -13,8 +13,12 @@ const dummyHash = bcrypt.hashSync('unusable-dummy-password', 12);
 
 router.post('/login', requireTrustedOrigin, employeeLoginLimit, async (req, res) => {
     try {
-        const { username, password } = req.body;
-        if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
+        const { username: suppliedUsername, password } = req.body;
+        if (typeof suppliedUsername !== 'string' || typeof password !== 'string' || !suppliedUsername || !password) {
+            return res.status(400).json(invalidCredentials);
+        }
+        const username = suppliedUsername.trim().replace(/[^A-Za-z0-9._-]/g, '');
+        if (!username || username.length > 64 || username !== suppliedUsername.trim()) {
             return res.status(400).json(invalidCredentials);
         }
         const employee = await Employee.findOne({ username }).select('+password');
@@ -43,6 +47,7 @@ router.post('/login', requireTrustedOrigin, employeeLoginLimit, async (req, res)
             });
         });
     } catch (error) {
+        console.error('Employee login failed:', error);
         res.status(500).json({ error: 'Login failed' });
     }
 });
@@ -63,6 +68,7 @@ router.get('/service-providers', async (req, res) => {
             .select('_id firstName lastName role');
         res.json(providers);
     } catch (error) {
+        console.error('Failed to fetch service providers:', error);
         res.status(500).json({ error: 'Failed to fetch service providers' });
     }
 });

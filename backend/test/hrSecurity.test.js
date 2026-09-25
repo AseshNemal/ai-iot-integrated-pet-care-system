@@ -76,6 +76,9 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
     assert.equal((await request('/api/expenses')).status, 401);
     assert.equal((await request('/api/appointments/all')).status, 401);
 
+    assert.equal((await login({ $ne: null }, 'bad-password')).status, 400);
+    assert.equal((await login('admin$ne', 'bad-password')).status, 400);
+
     const unknown = await login('missing', 'bad-password');
     const wrong = await login('admin', 'bad-password');
     assert.equal(unknown.status, 401);
