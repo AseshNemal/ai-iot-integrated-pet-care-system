@@ -56,6 +56,17 @@ router.post('/logout', requireTrustedOrigin, requireEmployee, (req, res) => {
     });
 });
 
+// Booking needs a public directory, never the full HR employee record.
+router.get('/service-providers', async (req, res) => {
+    try {
+        const providers = await Employee.find({ role: { $in: ['Vet', 'Groomer'] } })
+            .select('_id firstName lastName role');
+        res.json(providers);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch service providers' });
+    }
+});
+
 router.use(requireEmployee, requireHrAdmin);
 router.use((req, res, next) => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireTrustedOrigin(req, res, next);

@@ -3,6 +3,7 @@ import express from "express";
 import Appointment from "../model/Appointment.js";
 import { authenticate } from "../middleware/auth.middlewere.js";
 import axios from "axios"; // Add axios for notification API call
+const { requireEmployee, requireHrAdmin } = require('../middleware/employeeAuth');
 
 const router = express.Router();
 
@@ -193,8 +194,8 @@ router.get("/available-slots", async (req, res) => {
   }
 });
 
-// 📌 New Route for HR (without authentication)
-router.get("/all", async (req, res) => {
+// Appointment listing for HR and administrators.
+router.get("/all", requireEmployee, requireHrAdmin, async (req, res) => {
   try {
     const appointments = await Appointment.find({}).sort({ appointmentDate: 1 });
     res.json(appointments);
