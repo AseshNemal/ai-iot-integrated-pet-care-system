@@ -61,6 +61,21 @@ function Header() {
     return () => clearTimeout(handler);
   }, [searchTerm, allSearchOptions]);
 
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch("http://localhost:8090/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setUser(null);
+      navigate("/");
+    }
+  };
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -220,7 +235,7 @@ function Header() {
                     <Link to="/profile" className="dropdown-item">Profile</Link>
                     <Link to="/notifications" className="dropdown-item">Notifications</Link>
                     <Link to="/appointments/manage" className="dropdown-item">My Appointment</Link>
-                    <a href="http://localhost:8090/logout" className="dropdown-item">Logout</a>
+                    <a href="#" onClick={handleLogout} className="dropdown-item">Logout</a>
                   </div>
                 </div>
               ) : (

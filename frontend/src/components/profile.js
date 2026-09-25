@@ -52,7 +52,7 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get(`${API_BASE_URL}/logout`, {
+      await axios.post(`${API_BASE_URL}/logout`, {}, {
         withCredentials: true
       });
       navigate("/login");
