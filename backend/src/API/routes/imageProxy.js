@@ -11,7 +11,9 @@ router.get("/profile-image", async (req, res) => {
   }
 
   try {
-    // Fix (V13)
+    // Fix (V13 - Server-Side Request Forgery / OWASP A10)
+    // Validate target URL hostname to block loopback, localhost, and private
+    // addresses, preventing the server from fetching internal/restricted resources.
     const parsed = new URL(imageUrl);
     if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
       return res.status(403).json({ error: "Access to localhost is forbidden (SSRF Protected)" });
