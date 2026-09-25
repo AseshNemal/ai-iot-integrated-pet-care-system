@@ -4,6 +4,21 @@ const Employee = require('../model/Employee');
 const AppointmentData = require('../model/AppointmentData');
 const { authenticate } = require('../middleware/auth.middlewere');
 
+// Public booking catalogue. Exposes only the fields customers need to select
+// a service provider; the full employee records remain authenticated.
+router.get('/booking-options', async (req, res) => {
+    try {
+        const employees = await Employee.find({
+            role: { $in: ['Groomer', 'Vet'] }
+        }).select('_id firstName lastName role');
+
+        res.status(200).json(employees);
+    } catch (error) {
+        console.error('Error fetching booking options:', error);
+        res.status(500).json({ error: 'Failed to fetch booking options.' });
+    }
+});
+
 // Create Employee
 router.post('/create', authenticate, async (req, res) => {
     try {

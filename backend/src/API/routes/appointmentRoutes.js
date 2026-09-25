@@ -1,17 +1,56 @@
 /* routes/appointment.routes.js */
 import express from "express";
 import Appointment from "../model/Appointment.js";
-import { authenticate } from "../middleware/auth.middlewere.js";
-import axios from "axios"; // Add axios for notification API call
+import Employee from "../model/Employee.js";
+import Notification from "../model/Notification.js";
+import { authenticate, authorizeRoles } from "../middleware/auth.middlewere.js";
 
 const router = express.Router();
 
+const ownerEditableFields = [
+  "petName",
+  "serviceCategory",
+  "appointmentDate",
+  "appointmentTime",
+];
+
+const employeeEditableFields = [
+  "appointmentDate",
+  "appointmentTime",
+  "status",
+];
+
+const idsMatch = (firstId, secondId) =>
+  Boolean(firstId && secondId && firstId.toString() === secondId.toString());
+
+const canAccessAppointment = (appointment, user) =>
+  idsMatch(appointment.petOwnerId, user?._id) ||
+  idsMatch(appointment.employeeId, user?._id);
+
+const editableFieldsFor = (appointment, user) =>
+  idsMatch(appointment.petOwnerId, user?._id)
+    ? ownerEditableFields
+    : employeeEditableFields;
+
 // Validation helper
 const isValidAppointmentDate = (date) => {
-  const now = new Date();
-  const maxDate = new Date();
-  maxDate.setMonth(now.getMonth() + 60);
-  return date >= now && date <= maxDate;
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const toLocalDateKey = (value) => [
+    value.getFullYear(),
+    String(value.getMonth() + 1).padStart(2, "0"),
+    String(value.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setMonth(today.getMonth() + 60);
+
+  const appointmentDateKey = date.toISOString().slice(0, 10);
+  return appointmentDateKey >= toLocalDateKey(today) &&
+    appointmentDateKey <= toLocalDateKey(maxDate);
 };
 
 // Helper function to format date and time for notification
@@ -31,7 +70,7 @@ router.post("/", authenticate, async (req, res) => {
     // console.log("🔐 User from session:", req.user);
     // console.log("📦 Request body:", req.body);
 
-    const { employeeId, employeeFirstName, employeeRole, petName, serviceCategory, appointmentDate, appointmentTime } = req.body;
+    const { employeeId, petName, serviceCategory, appointmentDate, appointmentTime } = req.body;
 
     if (!req.user || !req.user._id) {
       console.error("❌ Authentication error: No user in session");
@@ -40,9 +79,14 @@ router.post("/", authenticate, async (req, res) => {
 
     const petOwnerId = req.user._id;
 
-    if (!employeeId || !employeeFirstName || !employeeRole || !petName || !serviceCategory || !appointmentDate || !appointmentTime) {
+    if (!employeeId || !petName || !serviceCategory || !appointmentDate || !appointmentTime) {
       console.error("❌ Validation error: Missing required fields");
       return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const employee = await Employee.findById(employeeId).select("firstName role");
+    if (!employee) {
+      return res.status(400).json({ error: "Selected employee is not available." });
     }
 
     // Convert date string to Date object
@@ -60,8 +104,8 @@ router.post("/", authenticate, async (req, res) => {
     const newAppointment = new Appointment({
       petOwnerId,
       employeeId,
-      employeeFirstName,
-      employeeRole,
+      employeeFirstName: employee.firstName,
+      employeeRole: employee.role,
       petName,
       serviceCategory,
       appointmentDate: apptDate,
@@ -74,17 +118,16 @@ router.post("/", authenticate, async (req, res) => {
     try {
       const formattedDate = formatDateForNotification(apptDate);
       
-      // Create notification data
-      const notificationData = {
+      const notification = new Notification({
         userId: petOwnerId,
         appointmentId: newAppointment._id,
         title: 'Appointment Booked Successfully',
-        message: `Your appointment for ${petName} with ${employeeFirstName} (${employeeRole}) has been scheduled for ${formattedDate} at ${appointmentTime}. Service: ${serviceCategory}.`,
-        type: 'appointment'
-      };
-      
-      // Send notification to notification service
-      await axios.post('http://localhost:8090/api/notifications/appointment', notificationData);
+        message: `Your appointment for ${petName} with ${employee.firstName} (${employee.role}) has been scheduled for ${formattedDate} at ${appointmentTime}. Service: ${serviceCategory}.`,
+        type: 'appointment',
+        read: false,
+      });
+
+      await notification.save();
       
       console.log("✅ Appointment notification created");
     } catch (notificationError) {
@@ -104,8 +147,13 @@ router.post("/", authenticate, async (req, res) => {
 router.get("/user/:userId", authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!idsMatch(userId, req.user?._id)) {
+      return res.status(403).json({ error: "You do not have permission to access these appointments." });
+    }
+
     const appointments = await Appointment.find({
-      $or: [{ petOwnerId: userId }, { employeeId: userId }]
+      $or: [{ petOwnerId: req.user._id }, { employeeId: req.user._id }]
     }).sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (err) {
@@ -126,17 +174,28 @@ router.put("/:id", authenticate, async (req, res) => {
       }
     }
 
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      id,
-      { ...req.body, updatedAt: new Date() },
-      { new: true }
-    );
+    const appointment = await Appointment.findById(id);
 
-    if (!updatedAppointment) {
+    if (!appointment) {
       return res.status(404).json({ error: "Appointment not found." });
     }
 
-    res.json(updatedAppointment);
+    if (!canAccessAppointment(appointment, req.user)) {
+      return res.status(403).json({ error: "You do not have permission to update this appointment." });
+    }
+
+    editableFieldsFor(appointment, req.user).forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        appointment[field] = field === "appointmentDate"
+          ? new Date(req.body[field])
+          : req.body[field];
+      }
+    });
+
+    appointment.updatedAt = new Date();
+    await appointment.save();
+
+    res.json(appointment);
   } catch (err) {
     res.status(500).json({ error: "Failed to update appointment." });
   }
@@ -145,10 +204,17 @@ router.put("/:id", authenticate, async (req, res) => {
 // 📌 Delete appointment
 router.delete("/:id", authenticate, async (req, res) => {
   try {
-    const deletedAppointment = await Appointment.findByIdAndDelete(req.params.id);
-    if (!deletedAppointment) {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
       return res.status(404).json({ error: "Appointment not found." });
     }
+
+    if (!canAccessAppointment(appointment, req.user)) {
+      return res.status(403).json({ error: "You do not have permission to delete this appointment." });
+    }
+
+    await appointment.deleteOne();
     res.json({ message: "Appointment deleted successfully." });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete appointment." });
@@ -193,8 +259,8 @@ router.get("/available-slots", async (req, res) => {
   }
 });
 
-// 📌 New Route for HR (without authentication)
-router.get("/all", async (req, res) => {
+// 📌 Get all appointments for authorized administrators
+router.get("/all", authenticate, authorizeRoles("Admin"), async (req, res) => {
   try {
     const appointments = await Appointment.find({}).sort({ appointmentDate: 1 });
     res.json(appointments);
