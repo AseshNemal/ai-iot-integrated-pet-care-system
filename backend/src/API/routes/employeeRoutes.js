@@ -259,8 +259,8 @@ router.post('/receive-appointment-data', async (req, res) => {
 
         const appointmentData = await AppointmentData.findOneAndUpdate(
             { employeeId },
-            { name, role, appointmentCount, createdAt: Date.now() },
-            { upsert: true, new: true }
+            { $set: { name, role, appointmentCount, createdAt: Date.now() } },
+            { upsert: true, new: true, runValidators: true }
         );
 
         res.status(201).send({ message: "Appointment data received successfully", appointmentData });
