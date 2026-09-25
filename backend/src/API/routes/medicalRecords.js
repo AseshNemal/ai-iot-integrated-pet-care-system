@@ -3,6 +3,17 @@ const router = express.Router();
 const MedicalRecord = require('../model/MedicalRecord');
 const { authenticate } = require('../middleware/auth.middlewere');
 
+const editableMedicalRecordFields = [
+  'visitDate',
+  'visitType',
+  'veterinarian',
+  'diagnosis',
+  'treatment',
+  'medications',
+  'notes',
+  'followUpDate'
+];
+
 // Create record
 router.post('/', authenticate, async (req, res) => {
     try {
@@ -54,10 +65,17 @@ router.get('/single/:id', authenticate, async (req, res) => {
 // Update record
 router.put('/:id', authenticate, async (req, res) => {
   try {
+    const updates = {};
+    editableMedicalRecordFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    });
+
     const updatedRecord = await MedicalRecord.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      { $set: updates },
+      { new: true, runValidators: true }
     );
     if (!updatedRecord) return res.status(404).json({ error: 'Record not found' });
     res.json(updatedRecord);
