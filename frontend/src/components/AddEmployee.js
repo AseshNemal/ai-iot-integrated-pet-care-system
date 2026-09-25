@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import hrApi from "../utils/hrApi";
 
 function AddEmployee() {
+    const navigate = useNavigate();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [username, setUsername] = useState("");
@@ -17,6 +18,15 @@ function AddEmployee() {
     const [success, setSuccess] = useState("");
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+    const handleLogout = async () => {
+        try {
+            await hrApi.post('/employee/logout');
+            navigate('/employee-login');
+        } catch (logoutError) {
+            setError('Logout failed. Please try again.');
+        }
+    };
 
     useEffect(() => {
         fetchEmployees();
@@ -138,9 +148,9 @@ function AddEmployee() {
                 <div className="navbar-brand">Pet Care Admin</div>
                 <div className="navbar-user">
                     <span>Admin User</span>
-                    <Link to="/" className="logout-link">
+                    <button type="button" className="logout-link" onClick={handleLogout}>
                         <i className="fas fa-sign-out-alt"></i> Logout
-                    </Link>
+                    </button>
                 </div>
             </div>
             <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
@@ -382,7 +392,7 @@ function AddEmployee() {
                     .navbar-brand { font-size: 20px; font-weight: 600; }
                     .navbar-user { display: flex; align-items: center; gap: 15px; }
                     .navbar-user span { font-size: 14px; }
-                    .logout-link { color: #ffffff; text-decoration: none; }
+                    .logout-link { color: #ffffff; text-decoration: none; background: none; border: 0; cursor: pointer; }
                     .logout-link:hover { color: #007bff; }
                     .sidebar {
                         width: 240px;
