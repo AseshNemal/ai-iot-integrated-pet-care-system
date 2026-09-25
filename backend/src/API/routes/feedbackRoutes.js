@@ -1,9 +1,10 @@
 const express = require("express");
 const Feedback = require("../model/Feedback");
 const router = express.Router();
+const { authenticate } = require('../middleware/auth.middlewere');
 
 // POST: Submit Feedback
-router.post("/add", async (req, res) => {
+router.post("/add", authenticate, async (req, res) => {
   try {
     const { userId, userName, feedback, rating } = req.body;
     const newFeedback = new Feedback({ userId, userName, feedback, rating });
@@ -26,7 +27,7 @@ router.get("/all", async (req, res) => {
 
 
 // Delete a feedback
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", authenticate, async (req, res) => {
     try {
       const feedback = await Feedback.findById(req.params.id);
       if (!feedback) {
@@ -41,14 +42,19 @@ router.delete("/delete/:id", async (req, res) => {
   });
   
   // Update a feedback
-  router.put("/edit/:id", async (req, res) => {
-    const { feedback, rating } = req.body;
-  
+  router.put("/edit/:id", authenticate, async (req, res) => {
     try {
+      const updates = {};
+      ["feedback", "rating"].forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+          updates[field] = req.body[field];
+        }
+      });
+
       const updatedFeedback = await Feedback.findByIdAndUpdate(
         req.params.id,
-        { feedback, rating },
-        { new: true }
+        { $set: updates },
+        { new: true, runValidators: true }
       );
   
       if (!updatedFeedback) {

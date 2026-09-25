@@ -1,165 +1,176 @@
-/* ServicesLanding.css */
+/*
+ * Styles scoped to the appointments landing page only (ServicesLanding.js).
+ * Mirrors the design tokens used on the homepage (see home.css). Every class
+ * is prefixed "pwh-services-" so it cannot collide with or affect other
+ * pages, including the appointment management page's own "pwh-appt-" prefix.
+ */
 
-.services-landing {
-    min-height: 100vh;
-    background-color: #fff8f0;
-    font-family: 'Segoe UI', sans-serif;
-    color: #1f3a93;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .services-landing h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: #001b44;
-    animation: fadeInDown 0.6s ease;
-  }
-  
-  .services-landing p {
-    font-size: 1.1rem;
-    color: #333;
-    max-width: 600px;
-    text-align: center;
-    margin-bottom: 2rem;
-    animation: fadeInDown 0.7s ease;
-  }
-  
-  @keyframes fadeInDown {
-    0% {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .service-cards {
-    display: grid;
+.pwh-services-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+
+  background: var(--pwh-bg);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.pwh-services-page *,
+.pwh-services-page *::before,
+.pwh-services-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-services-page h1,
+.pwh-services-page h2,
+.pwh-services-page h3 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-services-icon {
+  flex-shrink: 0;
+  height: 22px;
+  width: 22px;
+}
+
+.pwh-services-hero {
+  border-bottom: 1px solid var(--pwh-border);
+  padding: 56px 32px 48px;
+  text-align: center;
+}
+
+.pwh-services-kicker {
+  color: var(--pwh-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.pwh-services-hero h1 {
+  font-size: 2.25rem;
+  line-height: 1.15;
+}
+
+.pwh-services-hero p {
+  color: var(--pwh-muted);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  margin: 16px auto 0;
+  max-width: 560px;
+}
+
+.pwh-services-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 0 auto;
+  max-width: 900px;
+  padding: 48px 32px;
+}
+
+.pwh-services-card {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pwh-services-card:hover {
+  border-color: var(--pwh-primary);
+  box-shadow: 0 8px 20px rgba(23, 32, 51, 0.08);
+}
+
+.pwh-services-card__icon {
+  align-items: center;
+  background: var(--pwh-tint);
+  border-radius: 10px;
+  color: var(--pwh-primary);
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  margin-bottom: 16px;
+  width: 44px;
+}
+
+.pwh-services-card h2 {
+  font-size: 1.25rem;
+  margin-bottom: 14px;
+}
+
+.pwh-services-card ul {
+  color: var(--pwh-muted);
+  display: grid;
+  flex-grow: 1;
+  font-size: 0.9375rem;
+  gap: 8px;
+  line-height: 1.5;
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+}
+
+.pwh-services-card li {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+}
+
+.pwh-services-card li::before {
+  color: var(--pwh-primary);
+  content: "•";
+  font-weight: 700;
+}
+
+.pwh-services-card__btn {
+  background: var(--pwh-primary);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 12px 20px;
+  transition: background-color 0.15s ease;
+}
+
+.pwh-services-card__btn:hover {
+  background: var(--pwh-primary-dark);
+}
+
+.pwh-services-form-wrap {
+  margin: 0 auto;
+  max-width: 640px;
+  padding: 0 32px 64px;
+}
+
+@media (max-width: 700px) {
+  .pwh-services-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
-    margin-top: 2rem;
-    animation: fadeInCards 0.8s ease-in-out;
-  }
-  
-  @media (min-width: 768px) {
-    .service-cards {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @keyframes fadeInCards {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  .service-card {
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
-    width: 100%;
-    max-width: 350px;
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .service-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  }
-  
-  .service-card h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: #001b44;
-  }
-  
-  .service-card ul {
-    margin-bottom: 1.5rem;
-    text-align: left;
-    padding-left: 1.25rem;
-    color: #333;
-    line-height: 1.6;
-    list-style: disc;
-  }
-  
-  .service-card button {
-    background-color: #0075c9;
-    color: #fff;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    border-radius: 9999px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    font-weight: 600;
-  }
-  
-  .service-card button:hover {
-    background-color: #004a99;
-    transform: scale(1.05);
-  }
-  
-  /* Feature Badges */
-  .service-card .badge {
-    display: inline-block;
-    background-color: #fef3c7;
-    color: #92400e;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    animation: fadeIn 0.8s ease-in-out;
+    padding: 40px 20px;
   }
 
-  .container-ap {
-    display: flex;
-    justify-content: center; /* Centers the button horizontally */
-    align-items: center; /* Centers the button vertically */
-     /* Full viewport height */
+  .pwh-services-hero {
+    padding: 40px 20px 36px;
   }
-  
-  .appointment-button {
-    background-color: #4CAF50; /* Green background */
-    color: white; /* White text */
-    padding: 15px 32px; /* Padding for size */
-    text-align: center; /* Center text */
-    text-decoration: none; /* Remove underline */
-    display: inline-block; /* To adjust with other elements */
-    font-size: 16px; /* Text size */
-    margin: 4px 2px; /* Space around button */
-    cursor: pointer; /* Pointer cursor on hover */
-    border-radius: 4px; /* Rounded corners */
-    border: none; /* Remove border */
+
+  .pwh-services-hero h1 {
+    font-size: 1.75rem;
   }
-  
-  .appointment-button:hover {
-    background-color: #45a049; /* Darker green on hover */
+
+  .pwh-services-form-wrap {
+    padding: 0 20px 48px;
   }
-  
-  
-  
-  /* Responsive spacing */
-  @media (max-width: 500px) {
-    .service-card {
-      padding: 1.25rem;
-    }
-    .appointment-form {
-      padding: 1.5rem;
-    }
-  }
-  
+}

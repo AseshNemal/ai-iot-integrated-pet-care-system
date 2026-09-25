@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import hrApi from '../utils/hrApi';
 import './HRFinanceManagement.css';
 
 const HRFinanceManagement = () => {
@@ -11,7 +11,7 @@ const HRFinanceManagement = () => {
 
   const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get('http://localhost:8090/api/appointments/all');
+      const response = await hrApi.get('/api/appointments/all');
       const appointments = response.data;
       
       // Group appointments by employee and calculate counts

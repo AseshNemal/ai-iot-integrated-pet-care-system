@@ -1,0 +1,317 @@
+/*
+ * Styles scoped to the About Us page only. Mirrors the design tokens and
+ * section rhythm used on the homepage (see home.css) so this page reads as
+ * part of the same site, but every class is prefixed "pwh-about-" so it
+ * cannot collide with or affect home.css / other pages.
+ */
+
+.pwh-about-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+
+  background: var(--pwh-bg);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+.pwh-about-page *,
+.pwh-about-page *::before,
+.pwh-about-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-about-page img {
+  display: block;
+  max-width: 100%;
+}
+
+.pwh-about-page h1,
+.pwh-about-page h2,
+.pwh-about-page h3 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-about-page a:focus-visible {
+  outline: 2px solid var(--pwh-primary);
+  outline-offset: 3px;
+}
+
+.pwh-about-icon {
+  flex-shrink: 0;
+  height: 18px;
+  width: 18px;
+}
+
+.pwh-about-kicker {
+  color: var(--pwh-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+/* Intro / page header */
+.pwh-about-hero {
+  border-bottom: 1px solid var(--pwh-border);
+  padding: 64px 32px 56px;
+  text-align: center;
+}
+
+.pwh-about-hero__inner {
+  margin: 0 auto;
+  max-width: 720px;
+}
+
+.pwh-about-hero h1 {
+  font-size: 2.6rem;
+  line-height: 1.15;
+}
+
+.pwh-about-hero__lede {
+  color: var(--pwh-muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 20px 0 0;
+}
+
+/* Full-width text bands (Mission / How it started) */
+.pwh-about-band {
+  padding: 76px 32px;
+}
+
+.pwh-about-band--tint {
+  background: var(--pwh-tint);
+}
+
+.pwh-about-band__inner {
+  margin: 0 auto;
+  max-width: 720px;
+  text-align: center;
+}
+
+.pwh-about-band h2 {
+  font-size: 1.875rem;
+  line-height: 1.2;
+}
+
+.pwh-about-band__lede {
+  color: var(--pwh-muted);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  margin: 16px 0 0;
+}
+
+.pwh-about-band__lede + .pwh-about-band__lede {
+  margin-top: 14px;
+}
+
+/* Key features */
+.pwh-about-features {
+  border-top: 1px solid var(--pwh-border);
+  padding: 76px 32px;
+}
+
+.pwh-about-features__inner {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.pwh-about-features h2 {
+  font-size: 1.75rem;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.pwh-about-features__grid {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(4, 1fr);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pwh-about-features__grid li {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+}
+
+.pwh-about-features__grid .pwh-about-icon {
+  color: var(--pwh-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pwh-about-features__grid span {
+  color: var(--pwh-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Team */
+.pwh-about-team {
+  background: var(--pwh-tint);
+  padding: 76px 32px;
+}
+
+.pwh-about-team__inner {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.pwh-about-team h2 {
+  font-size: 1.75rem;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.pwh-about-team__grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.pwh-about-team__card {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  padding: 24px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pwh-about-team__card:hover {
+  border-color: var(--pwh-primary);
+  transform: translateY(-2px);
+}
+
+.pwh-about-team__avatar {
+  border-radius: 50%;
+  height: 84px;
+  margin: 0 auto 14px;
+  object-fit: cover;
+  width: 84px;
+}
+
+.pwh-about-team__name {
+  color: var(--pwh-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.pwh-about-team__role {
+  color: var(--pwh-muted);
+  font-size: 0.875rem;
+  margin: 0 0 10px;
+}
+
+.pwh-about-team__link {
+  align-items: center;
+  color: var(--pwh-primary);
+  display: inline-flex;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  gap: 5px;
+}
+
+.pwh-about-team__card:hover .pwh-about-team__link {
+  text-decoration: underline;
+}
+
+/* Final CTA */
+.pwh-about-final {
+  background: var(--pwh-primary-dark);
+  color: #ffffff;
+  padding: 60px 32px;
+}
+
+.pwh-about-final__inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.pwh-about-final h2 {
+  font-size: 1.625rem;
+}
+
+.pwh-about-btn {
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  display: inline-block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 13px 24px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pwh-about-btn--on-dark {
+  background: #ffffff;
+  color: var(--pwh-primary-dark);
+}
+
+.pwh-about-btn--on-dark:hover {
+  background: var(--pwh-tint);
+}
+
+/* Responsive: tablet ~768px */
+@media (max-width: 900px) {
+  .pwh-about-features__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Responsive: mobile ~390px */
+@media (max-width: 600px) {
+  .pwh-about-hero {
+    padding: 44px 20px 40px;
+  }
+
+  .pwh-about-hero h1 {
+    font-size: 2rem;
+  }
+
+  .pwh-about-band,
+  .pwh-about-features,
+  .pwh-about-team {
+    padding: 48px 20px;
+  }
+
+  .pwh-about-band h2,
+  .pwh-about-features h2,
+  .pwh-about-team h2 {
+    font-size: 1.5rem;
+  }
+
+  .pwh-about-features__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pwh-about-team__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pwh-about-final__inner {
+    flex-direction: column;
+  }
+}

@@ -2,6 +2,97 @@ const express = require('express');
 const router = express.Router();
 const Employee = require('../model/Employee');
 const AppointmentData = require('../model/AppointmentData');
+const bcrypt = require('bcrypt');
+const { timingSafeEqual } = require('node:crypto');
+const { publicEmployee, requireEmployee, requireHrAdmin, requireTrustedOrigin } = require('../middleware/employeeAuth');
+const employeeLoginLimit = require('../middleware/employeeLoginLimit');
+
+const invalidCredentials = { error: 'Invalid username or password' };
+const isBcryptHash = (value) => /^\$2[aby]\$\d\d\$/.test(value);
+const dummyHash = bcrypt.hashSync('unusable-dummy-password', 12);
+
+router.post('/login', requireTrustedOrigin, employeeLoginLimit, async (req, res) => {
+    try {
+        const { username: suppliedUsername, password } = req.body;
+        if (typeof suppliedUsername !== 'string' || typeof password !== 'string' || !suppliedUsername || !password) {
+            return res.status(400).json(invalidCredentials);
+        }
+        const username = suppliedUsername.trim().replace(/[^A-Za-z0-9._-]/g, '');
+        if (!username || username.length > 64 || username !== suppliedUsername.trim()) {
+            return res.status(400).json(invalidCredentials);
+        }
+        const employee = await Employee.findOne({ username }).select('+password');
+        if (!employee) await bcrypt.compare(password, dummyHash);
+        const valid = employee && (isBcryptHash(employee.password)
+            ? await bcrypt.compare(password, employee.password)
+            : Buffer.byteLength(password) === Buffer.byteLength(employee.password) &&
+              timingSafeEqual(Buffer.from(password), Buffer.from(employee.password)));
+        if (!valid) {
+            req.recordFailedEmployeeLogin();
+            return res.status(401).json(invalidCredentials);
+        }
+
+        // Upgrade existing plaintext records on their first successful login.
+        if (!isBcryptHash(employee.password)) {
+            employee.password = password;
+            await employee.save();
+        }
+        req.session.regenerate((error) => {
+            if (error) return res.status(500).json({ error: 'Login failed' });
+            req.session.employeeId = employee.id;
+            req.session.save((saveError) => {
+                if (saveError) return res.status(500).json({ error: 'Login failed' });
+                req.clearFailedEmployeeLogin();
+                res.json({ message: 'Login successful', user: publicEmployee(employee) });
+            });
+        });
+    } catch (error) {
+        console.error('Employee login failed:', error);
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+router.get('/me', requireEmployee, (req, res) => res.json({ user: publicEmployee(req.employee) }));
+router.post('/logout', requireTrustedOrigin, requireEmployee, (req, res) => {
+    req.session.destroy((error) => {
+        if (error) return res.status(500).json({ error: 'Logout failed' });
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logged out' });
+    });
+});
+
+// Booking needs a public directory, never the full HR employee record.
+router.get('/service-providers', async (req, res) => {
+    try {
+        const providers = await Employee.find({ role: { $in: ['Vet', 'Groomer'] } })
+            .select('_id firstName lastName role');
+        res.json(providers);
+    } catch (error) {
+        console.error('Failed to fetch service providers:', error);
+        res.status(500).json({ error: 'Failed to fetch service providers' });
+    }
+});
+
+// Public booking catalogue. Exposes only the fields customers need to select
+// a service provider; the full employee records remain authenticated.
+router.get('/booking-options', async (req, res) => {
+    try {
+        const employees = await Employee.find({
+            role: { $in: ['Groomer', 'Vet'] }
+        }).select('_id firstName lastName role');
+
+        res.status(200).json(employees);
+    } catch (error) {
+        console.error('Error fetching booking options:', error);
+        res.status(500).json({ error: 'Failed to fetch booking options.' });
+    }
+});
+
+router.use(requireEmployee, requireHrAdmin);
+router.use((req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireTrustedOrigin(req, res, next);
+    next();
+});
 
 // Create Employee
 router.post('/create', async (req, res) => {
@@ -18,14 +109,14 @@ router.post('/create', async (req, res) => {
             lastName,
             username,
             email,
-            password, // Plain text as per your request (April 22, 2025)
+            password,
             role,
             availability: []
         });
 
         await employee.save();
         const totalCount = await Employee.countDocuments(); // Get updated count
-        res.status(201).send({ employee, totalCount });
+        res.status(201).send({ employee: publicEmployee(employee), totalCount });
     } catch (error) {
         console.error('Error creating employee:', error);
         res.status(400).send({ error: error.message });
@@ -35,7 +126,8 @@ router.post('/create', async (req, res) => {
 // Retrieve All Employees
 router.get('/', async (req, res) => {
     try {
-        const employees = await Employee.find();
+        //SECURITY FIX (V07-employee-password-leak)
+        const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json(employees);
     } catch (error) {
@@ -46,7 +138,8 @@ router.get('/', async (req, res) => {
 
 router.get('/get', async (req, res) => {
     try {
-        const employees = await Employee.find();
+        //to prevent plaintext employee credentials leaking in API responses
+        const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json({ employees, totalCount });
     } catch (error) {
@@ -63,38 +156,6 @@ router.get('/count', async (req, res) => {
     } catch (error) {
         console.error('Error fetching employee count:', error);
         res.status(400).send({ error: error.message });
-    }
-});
-
-// Employee Login
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        
-        if (!username || !password) {
-            return res.status(400).send({ error: "Username and password are required" });
-        }
-        
-        const employee = await Employee.findOne({ username });
-        
-        if (!employee) {
-            return res.status(404).send({ error: "Employee not found" });
-        }
-        
-        if (employee.password !== password) {
-            return res.status(401).send({ error: "Invalid credentials" });
-        }
-        
-        // Return employee data without password
-        const { password: _, ...employeeData } = employee.toObject();
-        
-        res.status(200).json({ 
-            message: "Login successful", 
-            user: employeeData 
-        });
-    } catch (error) {
-        console.error('Error during employee login:', error);
-        res.status(500).send({ error: error.message });
     }
 });
 
@@ -134,7 +195,7 @@ router.put('/:id', async (req, res) => {
 
         await employee.save();
         const totalCount = await Employee.countDocuments(); // Include count in response
-        res.status(200).send({ employee, totalCount });
+        res.status(200).send({ employee: publicEmployee(employee), totalCount });
     } catch (error) {
         console.error('Error updating employee:', error);
         res.status(400).send({ error: error.message });
@@ -161,7 +222,7 @@ router.post('/appointment', async (req, res) => {
         });
 
         await employee.save();
-        res.status(201).send({ message: "Appointment added successfully", employee });
+        res.status(201).send({ message: "Appointment added successfully", employee: publicEmployee(employee) });
     } catch (error) {
         console.error('Error adding appointment:', error);
         res.status(400).send({ error: error.message });
@@ -200,8 +261,8 @@ router.post('/receive-appointment-data', async (req, res) => {
 
         const appointmentData = await AppointmentData.findOneAndUpdate(
             { employeeId },
-            { name, role, appointmentCount, createdAt: Date.now() },
-            { upsert: true, new: true }
+            { $set: { name, role, appointmentCount, createdAt: Date.now() } },
+            { upsert: true, new: true, runValidators: true }
         );
 
         res.status(201).send({ message: "Appointment data received successfully", appointmentData });

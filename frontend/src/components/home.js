@@ -1,404 +1,296 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './home.css';
+import storeScreenshot from '../assets/home/store-screenshot.png';
+import trackerDevicePhoto from '../assets/home/tracker-device.jpg';
+import aiTrainingDogPhoto from '../assets/home/ai-training-dog.jpg';
+import everydayCarePhoto from '../assets/home/everyday-care-pets.jpg';
+import {
+  PawIcon,
+  ClipboardHeartIcon,
+  CalendarIcon,
+  HomeHeartIcon,
+  BagIcon,
+  SparkleIcon,
+  PulseIcon,
+  ThermometerIcon,
+  ActivityIcon,
+  MapPinIcon,
+  BatteryIcon,
+  DropletIcon,
+  ArrowRightIcon,
+} from './homeIcons';
+
+const OVERVIEW_GROUPS = [
+  {
+    label: 'Care',
+    items: [
+      { icon: PawIcon, label: 'Pet profiles', to: '/pet' },
+      { icon: ClipboardHeartIcon, label: 'Medical records', to: '/pet' },
+      { icon: CalendarIcon, label: 'Appointments', to: '/appointments' },
+    ],
+  },
+  {
+    label: 'Services',
+    items: [
+      { icon: HomeHeartIcon, label: 'Adoption', to: '/adoption-portal' },
+      { icon: BagIcon, label: 'Shopping', to: '/product/all' },
+    ],
+  },
+  {
+    label: 'Smart features',
+    items: [
+      { icon: SparkleIcon, label: 'AI training', to: '/petTrainingForm' },
+      { icon: PulseIcon, label: 'Health monitoring', to: '/pet' },
+    ],
+  },
+];
+
+const MONITORING_METRICS = [
+  { icon: ThermometerIcon, label: 'Body temperature' },
+  { icon: PulseIcon, label: 'Heart rate' },
+  { icon: ActivityIcon, label: 'Activity & steps' },
+  { icon: DropletIcon, label: 'Environment temp & humidity' },
+  { icon: MapPinIcon, label: 'GPS location' },
+  { icon: BatteryIcon, label: 'Battery status' },
+];
+
+const SERVICE_ITEMS = [
+  {
+    icon: CalendarIcon,
+    title: 'Veterinary & grooming appointments',
+    text: 'See what a clinic or groomer has open and book directly.',
+    to: '/appointments',
+    cta: 'Book an appointment',
+  },
+  {
+    icon: ClipboardHeartIcon,
+    title: 'Medical records',
+    text: "Every visit and treatment stays attached to your pet's profile.",
+    to: '/pet',
+    cta: 'View pet records',
+  },
+  {
+    icon: HomeHeartIcon,
+    title: 'Adoption',
+    text: 'Browse adoptable pets, or list one that needs a home.',
+    to: '/adoption-portal',
+    cta: 'Open the adoption portal',
+  },
+];
+
+const STEPS = [
+  { n: '01', title: 'Add your pet', text: "Create a profile with your pet's basic details." },
+  { n: '02', title: 'Organize their care', text: 'Keep medical records and appointments in one place.' },
+  { n: '03', title: 'Use the services you need', text: 'Adoption, shopping, and AI training guidance, when you need them.' },
+  { n: '04', title: 'Connect monitoring (optional)', text: "Link a compatible tracker to your pet's profile." },
+];
 
 function Home() {
-  const styles = {
-    container: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '0 20px',
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-    },
-    header: {
-      background: 'linear-gradient(135deg, #6e8efb, #a777e3)',
-      color: 'white',
-      padding: '80px 20px',
-      textAlign: 'center',
-      borderRadius: '0 0 20px 20px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-    },
-    headerTitle: {
-      fontSize: '3rem',
-      marginBottom: '20px',
-      fontWeight: '700'
-    },
-    headerSubtitle: {
-      fontSize: '1.2rem',
-      marginBottom: '30px',
-      maxWidth: '700px',
-      marginLeft: 'auto',
-      marginRight: 'auto'
-    },
-    ctaButton: {
-      display: 'inline-block',
-      padding: '12px 30px',
-      backgroundColor: '#fff',
-      color: '#6e8efb',
-      borderRadius: '30px',
-      textDecoration: 'none',
-      fontWeight: '600',
-      fontSize: '1.1rem',
-      transition: 'all 0.3s ease'
-    },
-    featuresSection: {
-      padding: '80px 0',
-      textAlign: 'center'
-    },
-    sectionTitle: {
-      fontSize: '2.5rem',
-      marginBottom: '50px',
-      color: '#333',
-      fontWeight: '600'
-    },
-    featuresGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gap: '30px',
-      padding: '0 20px'
-    },
-    featureCard: {
-      background: '#fff',
-      borderRadius: '15px',
-      padding: '30px',
-      boxShadow: '0 5px 15px rgba(0,0,0,0.05)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      flexDirection: 'column'
-    },
-    featureIcon: {
-      fontSize: '3rem',
-      color: '#6e8efb',
-      marginBottom: '20px'
-    },
-    featureTitle: {
-      fontSize: '1.5rem',
-      marginBottom: '15px',
-      color: '#333'
-    },
-    featureText: {
-      color: '#666',
-      lineHeight: '1.6',
-      flexGrow: '1'
-    },
-    featureButton: {
-      marginTop: '20px',
-      padding: '10px 20px',
-      backgroundColor: '#6e8efb',
-      color: 'white',
-      border: 'none',
-      borderRadius: '30px',
-      cursor: 'pointer',
-      fontWeight: '600',
-      transition: 'all 0.3s ease',
-      textDecoration: 'none',
-      display: 'inline-block',
-      textAlign: 'center'
-    },
-    statsSection: {
-      background: '#f9f9f9',
-      padding: '60px 0',
-      textAlign: 'center'
-    },
-    statsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '30px',
-      maxWidth: '900px',
-      margin: '0 auto'
-    },
-    statItem: {
-      padding: '20px'
-    },
-    statNumber: {
-      fontSize: '2.5rem',
-      fontWeight: '700',
-      color: '#6e8efb',
-      marginBottom: '10px'
-    },
-    statLabel: {
-      color: '#666',
-      fontSize: '1rem'
-    },
-    howItWorks: {
-      padding: '80px 0',
-      background: '#fff',
-      textAlign: 'center'
-    },
-    stepsContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      maxWidth: '800px',
-      margin: '0 auto'
-    },
-    step: {
-      display: 'flex',
-      alignItems: 'center',
-      marginBottom: '40px',
-      width: '100%'
-    },
-    stepNumber: {
-      width: '50px',
-      height: '50px',
-      borderRadius: '50%',
-      background: '#6e8efb',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '1.5rem',
-      fontWeight: '700',
-      marginRight: '30px',
-      flexShrink: '0'
-    },
-    stepContent: {
-      textAlign: 'left',
-      flex: '1'
-    },
-    stepTitle: {
-      fontSize: '1.3rem',
-      marginBottom: '10px',
-      color: '#333'
-    },
-    stepText: {
-      color: '#666',
-      lineHeight: '1.6'
-    }
-  };
-
   return (
-    <div>
-      {/* Hero Section */}
-      <header style={styles.header}>
-        <div style={styles.container}>
-          <h1 style={styles.headerTitle}>Monitor Your Pet's Health with Ease</h1>
-          <p style={styles.headerSubtitle}>
-            Our advanced pet monitoring system keeps you connected to your furry friend's
-            health and activity 24/7, giving you peace of mind wherever you are.
+    <div className="pwh-home">
+      {/* Hero */}
+      <section className="pwh-hero">
+        <div className="pwh-hero__inner">
+          <div className="pwh-hero__copy">
+            <p className="pwh-kicker">Pet Wellness Hub</p>
+            <h1>Everything your pet needs, all in one place.</h1>
+            <p className="pwh-hero__lede">
+              Manage your pet's care, appointments and medical records, use
+              adoption and shopping, and connect health monitoring when you
+              want it — one account instead of a handful of separate tools.
+            </p>
+            <div className="pwh-hero__actions">
+              <Link to="/pet" className="pwh-btn pwh-btn--primary">
+                View My Pets
+              </Link>
+              <a href="#platform-overview" className="pwh-btn pwh-btn--ghost">
+                Explore features
+              </a>
+            </div>
+          </div>
+
+          <div className="pwh-hero__panel" aria-hidden="true">
+            <span className="pwh-hero__panel-label">What's included</span>
+            <ul className="pwh-hero__panel-list">
+              <li>
+                <strong>Care</strong>
+                <span>Profiles, records, appointments</span>
+              </li>
+              <li>
+                <strong>Services</strong>
+                <span>Adoption, shopping</span>
+              </li>
+              <li>
+                <strong>Smart features</strong>
+                <span>AI training, health monitoring</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick platform overview */}
+      <section id="platform-overview" className="pwh-overview">
+        <div className="pwh-overview__inner">
+          {OVERVIEW_GROUPS.map((group) => (
+            <div className="pwh-overview__group" key={group.label}>
+              <h2>{group.label}</h2>
+              <ul>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.label}>
+                      <Link to={item.to}>
+                        <Icon className="pwh-icon" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pet management / everyday care */}
+      <section className="pwh-split-tint-bg">
+        <div className="pwh-split">
+          <div className="pwh-split__media">
+            <img
+              src={everydayCarePhoto}
+              alt="A golden retriever and a cat resting together at home"
+              loading="lazy"
+            />
+          </div>
+          <div className="pwh-split__copy">
+            <p className="pwh-kicker">Everyday care</p>
+            <h2>Keep your pet's care organized</h2>
+            <p className="pwh-split__lede">
+              A pet's profile brings their basic details, medical history and
+              upcoming appointments together, so you're not digging through
+              old messages before a vet visit.
+            </p>
+            <ul className="pwh-plain-list">
+              <li>Profile &amp; basic details</li>
+              <li>Medical history</li>
+              <li>Upcoming appointments</li>
+            </ul>
+            <Link to="/pet" className="pwh-link-cta">
+              Manage my pets
+              <ArrowRightIcon className="pwh-icon" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Connected health monitoring */}
+      <section className="pwh-split">
+        <div className="pwh-split__media">
+          <img
+            src={trackerDevicePhoto}
+            alt="The Pet Health Tracker device, a collar-mounted sensor unit"
+            loading="lazy"
+          />
+          <p className="pwh-split__caption">The Pet Health Tracker device</p>
+        </div>
+        <div className="pwh-split__copy">
+          <p className="pwh-kicker">Part of the platform, not the whole thing</p>
+          <h2>Connected health, when you need it</h2>
+          <p className="pwh-split__lede">
+            For pets wearing a compatible tracker, readings stream to their
+            profile so you can see how they're doing between visits.
           </p>
-          <Link to="/pet" style={styles.ctaButton}>Get Started</Link>
-        </div>
-      </header>
-
-      {/* Features Section */}
-      <section style={styles.featuresSection}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Key Features</h2>
-          <div style={styles.featuresGrid}>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📊</div>
-              <h3 style={styles.featureTitle}>Real-time Monitoring</h3>
-              <p style={styles.featureText}>
-                Track your pet's vital signs including heart rate, temperature, and activity levels in real time.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📍</div>
-              <h3 style={styles.featureTitle}>GPS Tracking</h3>
-              <p style={styles.featureText}>
-                Never lose your pet again with our precise GPS location tracking.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>📱</div>
-              <h3 style={styles.featureTitle}>Mobile Alerts</h3>
-              <p style={styles.featureText}>
-                Get instant notifications if your pet's health metrics go outside normal ranges.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🐾</div>
-              <h3 style={styles.featureTitle}>Adoption Portal</h3>
-              <p style={styles.featureText}>
-                Find your perfect furry friend through our easy-to-use adoption portal.
-              </p>
-              <Link to="/adoption-portal" style={styles.featureButton}>Explore Adoption</Link>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>✂️</div>
-              <h3 style={styles.featureTitle}>Grooming & Veterinary Appointment</h3>
-              <p style={styles.featureText}>
-                Schedule grooming and veterinary appointments conveniently through our platform.
-              </p>
-              <Link to="/appointments" style={styles.featureButton}>Book Appointment</Link>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>💊</div>
-              <h3 style={styles.featureTitle}>Medicine Records Management</h3>
-              <p style={styles.featureText}>
-                Keep track of your pet's medication and health records all in one place.
-              </p>
-              <Link to="/pet" style={styles.featureButton}>Manage Records</Link>
-            </div>
-          </div>
-          <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🤖</div>
-              <h3 style={styles.featureTitle}>AI Pet Training</h3>
-              <p style={styles.featureText}>
-                Our AI-powered training system helps teach your pet commands and track progress with personalized lessons.
-              </p>
-              <Link to="/petTrainingForm" style={styles.featureButton}>Try Pet Trainer</Link>
-            </div>
+          <ul className="pwh-metric-list">
+            {MONITORING_METRICS.map(({ icon: Icon, label }) => (
+              <li key={label}>
+                <Icon className="pwh-icon" />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
+          <Link to="/pet" className="pwh-link-cta">
+            Explore monitoring
+            <ArrowRightIcon className="pwh-icon" />
+          </Link>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section style={styles.statsSection}>
-        <div style={styles.container}>
-          <div style={styles.statsGrid}>
-            <div style={styles.statItem}>
-              <div style={styles.statNumber}>10K+</div>
-              <div style={styles.statLabel}>Happy Pets</div>
-            </div>
-            <div style={styles.statItem}>
-              <div style={styles.statNumber}>24/7</div>
-              <div style={styles.statLabel}>Monitoring</div>
-            </div>
-            <div style={styles.statItem}>
-              <div style={styles.statNumber}>99%</div>
-              <div style={styles.statLabel}>Accuracy</div>
-            </div>
+      {/* Services */}
+      <section className="pwh-services">
+        <div className="pwh-services__inner">
+          <div className="pwh-services__feature">
+            <img src={storeScreenshot} alt="The Pet Wellness Hub store, showing real products and prices" loading="lazy" />
+            <p className="pwh-split__caption">The in-app pet store</p>
+            <h2>Shopping, without leaving the app</h2>
+            <p className="pwh-services__lede">Order food, toys and everyday supplies and reorder when you run out.</p>
+            <Link to="/product/all" className="pwh-link-cta">
+              Browse the store
+              <ArrowRightIcon className="pwh-icon" />
+            </Link>
+          </div>
+
+          <div className="pwh-services__list">
+            {SERVICE_ITEMS.slice(0, 2).map((item) => {
+              const Icon = item.icon;
+              return (
+                <div className="pwh-services__row" key={item.title}>
+                  <Icon className="pwh-icon" />
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                    <Link to={item.to}>{item.cta}</Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section style={styles.howItWorks}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>How It Works</h2>
-          <div style={styles.stepsContainer}>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>1</div>
-              <div style={styles.stepContent}>
-                <h3 style={styles.stepTitle}>Attach the Device</h3>
-                <p style={styles.stepText}>
-                  Simply attach our lightweight monitoring device to your pet's collar.
-                </p>
-              </div>
-            </div>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>2</div>
-              <div style={styles.stepContent}>
-                <h3 style={styles.stepTitle}>Connect to App</h3>
-                <p style={styles.stepText}>
-                  Download our mobile app and pair it with your pet's device via Bluetooth.
-                </p>
-              </div>
-            </div>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>3</div>
-              <div style={styles.stepContent}>
-                <h3 style={styles.stepTitle}>Monitor & Train</h3>
-                <p style={styles.stepText}>
-                  View all your pet's health metrics and use our AI trainer to teach new commands.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* AI training */}
+      <section className="pwh-ai">
+        <div className="pwh-ai__inner">
+          <p className="pwh-kicker">AI pet training</p>
+          <h2>Training guidance from a short questionnaire</h2>
+          <p className="pwh-ai__lede">
+            Answer a few questions about your pet's behavior and the AI
+            trainer generates a plan based on what you described. It's a
+            starting point for everyday training, not a replacement for a
+            vet or a certified trainer.
+          </p>
+          <img src={aiTrainingDogPhoto} alt="A golden retriever wearing a Pet Wellness Hub health tracker collar" loading="lazy" />
+          <Link to="/petTrainingForm" className="pwh-link-cta">
+            Try the AI pet trainer
+            <ArrowRightIcon className="pwh-icon" />
+          </Link>
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
-      <section style={{ ...styles.featuresSection, background: '#f4f6fc' }}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>Why Choose Our System?</h2>
-          <div style={styles.featuresGrid}>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🔒</div>
-              <h3 style={styles.featureTitle}>Secure & Private</h3>
-              <p style={styles.featureText}>
-                Your pet's data is encrypted and stored securely in the cloud.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🧠</div>
-              <h3 style={styles.featureTitle}>AI Powered Insights</h3>
-              <p style={styles.featureText}>
-                Get personalized suggestions based on your pet's health trends and behavior patterns.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🔧</div>
-              <h3 style={styles.featureTitle}>Easy Setup</h3>
-              <p style={styles.featureText}>
-                Plug and play. No complex configurations. Works out of the box.
-              </p>
-            </div>
-            <div style={styles.featureCard} >
-              <div style={styles.featureIcon}>🎓</div>
-              <h3 style={styles.featureTitle}>Smart Training</h3>
-              <p style={styles.featureText}>
-                Our AI adapts to your pet's learning style for faster, more effective training.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🐾</div>
-              <h3 style={styles.featureTitle}>Comprehensive Adoption Portal</h3>
-              <p style={styles.featureText}>
-                Easily find and adopt pets through our integrated adoption platform, connecting loving homes with pets in need.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>✂️</div>
-              <h3 style={styles.featureTitle}>Convenient Grooming & Veterinary Appointments</h3>
-              <p style={styles.featureText}>
-                Schedule and manage grooming and veterinary visits seamlessly to keep your pet healthy and happy.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>💊</div>
-              <h3 style={styles.featureTitle}>Efficient Medicine Records Management</h3>
-              <p style={styles.featureText}>
-                Keep all your pet’s medication and health records organized and accessible in one place.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🤖</div>
-              <h3 style={styles.featureTitle}>AI Pet Training</h3>
-              <p style={styles.featureText}>
-                Our AI-powered training system helps teach your pet commands and track progress with personalized lessons.
-              </p>
-            </div>
-            <div style={styles.featureCard}>
-              <div style={styles.featureIcon}>🛒</div>
-              <h3 style={styles.featureTitle}>Integrated Pet Shopping</h3>
-              <p style={styles.featureText}>
-                Browse and purchase pet supplies easily through our built-in shopping platform.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section style={styles.featuresSection}>
-        <div style={styles.container}>
-          <h2 style={styles.sectionTitle}>What Pet Owners Say</h2>
-          <div style={styles.featuresGrid}>
-            <div style={styles.featureCard}>
-              <p style={{ ...styles.featureText, fontStyle: 'italic' }}>
-                "This system helped detect early signs of fever in my dog. It probably saved his life!"
-              </p>
-              <h4 style={{ marginTop: '15px', color: '#333' }}>– Samantha, Dog Owner</h4>
-            </div>
-            <div style={styles.featureCard}>
-              <p style={{ ...styles.featureText, fontStyle: 'italic' }}>
-                "The AI trainer taught my stubborn terrier to sit in just 3 days - something I couldn't do in months!"
-              </p>
-              <h4 style={{ marginTop: '15px', color: '#333' }}>– Michael, Dog Owner</h4>
-            </div>
-          </div>
+      {/* How it works */}
+      <section className="pwh-steps">
+        <div className="pwh-steps__inner">
+          <h2>How it works</h2>
+          <ol>
+            {STEPS.map((step) => (
+              <li key={step.n}>
+                <span className="pwh-steps__n">{step.n}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section style={{ ...styles.header, background: 'linear-gradient(135deg, #43cea2, #185a9d)' }}>
-        <div style={styles.container}>
-          <h2 style={styles.headerTitle}>Join Thousands of Pet Owners Today!</h2>
-          <p style={styles.headerSubtitle}>
-            Experience smart, stress-free pet care and training. Get started with our AI-powered monitoring system.
-          </p>
-          <Link to="/pet" style={styles.ctaButton}>Start Monitoring</Link>
+      <section className="pwh-final">
+        <div className="pwh-final__inner">
+          <h2>Keep your pet's care in one place.</h2>
+          <Link to="/pet" className="pwh-btn pwh-btn--on-dark">
+            View My Pets
+          </Link>
         </div>
       </section>
     </div>

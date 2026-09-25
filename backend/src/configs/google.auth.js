@@ -3,6 +3,17 @@ import config from "../configs/index.js";
 import User from "../API/model/user.model.js";
 
 const googleAuth = (passport) => {
+  if (
+    !config.GOOGLE_CLIENT_ID ||
+    !config.GOOGLE_CLIENT_SECRET ||
+    !config.GOOGLE_REDIRECT_URL
+  ) {
+    console.warn(
+      "Google OAuth is disabled. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URL in backend/.env."
+    );
+    return false;
+  }
+
   passport.use(
     new GoogleStrategy.Strategy(
       {
@@ -16,7 +27,7 @@ const googleAuth = (passport) => {
             googleId: profile.id,
             displayName: profile.displayName,
             gmail: profile.emails[0].value,
-            image: profile.photos?.[0]?.value,
+            image: profile.photos?.[0]?.value?.replace(/=s\d+-c$/, "=s200-c"),
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
           };
@@ -25,6 +36,9 @@ const googleAuth = (passport) => {
 
           if (!user) {
             user = await User.create(userObj);
+          } else {
+            Object.assign(user, userObj);
+            await user.save();
           }
 
           return done(null, user);
@@ -49,6 +63,8 @@ const googleAuth = (passport) => {
       done(err, null);
     }
   });
+
+  return true;
 };
 
 export { googleAuth };

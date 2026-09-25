@@ -14,7 +14,12 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 ### Medical Records & Appointments
 - Pet profile management (add/edit/list pets, owner association)
 - Medical record creation and editing per pet
-- Veterinary appointment scheduling
+- Veterinary and grooming appointment scheduling with live staff/time-slot selection
+- Appointment creation derives the pet owner from the authenticated session and
+  resolves staff names and roles from the server-side employee record
+- Appointment reads, updates, and cancellations enforce object-level authorization:
+  only the pet owner or assigned employee can access an individual appointment,
+  while the all-appointments view requires the `Admin` role
 
 ### AI-Assisted Features
 - AI-powered pet training assistant (`backend/src/API/routes/gemini.js`) using the Gemini API to generate behavioral-correction and obedience-training plans from a submitted questionnaire
@@ -25,9 +30,22 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 - Admin review dashboard for adoption ads
 
 ### Store, Orders & Payments
-- Pet store with product catalog and admin product management
-- Order placement and order history ("My Orders")
+- Responsive pet store at `/product/all` with product search, category filters,
+  price/name sorting, stock indicators, product-detail dialogs, and a slide-in cart
+- Explicit loading, API-error, empty-result, out-of-stock, and missing-image states
+  across the catalog; product browsing remains public
+- Authenticated order placement and responsive order history at `/my-orders`, with
+  newest/oldest sorting, per-order line items, order totals, and aggregate purchase
+  statistics
+- Order history distinguishes loading, signed-out, empty, and API-error states and
+  sends the server-side session cookie when requesting protected order data
 - Checkout page with client-side card-detail form and validation
+- Store and order-history pages share the home page's navy/indigo visual system,
+  responsive layout conventions, keyboard focus styles, and reduced-motion support
+
+The frontend reads the backend origin from `REACT_APP_API_BASE_URL` through
+`frontend/src/config/api.js` (default: `http://localhost:8090`). See
+[`frontend/README.md`](frontend/README.md) for route, state, and maintenance details.
 
   > Note: the payment page currently validates and captures card details in the browser only; no third-party payment gateway (e.g. Stripe/PayPal) is integrated yet.
 
@@ -36,19 +54,34 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 - HR and financial management pages, including expense tracking (`Expense` model, `expenseRoutes`)
 
 ### Authentication & Administration
-- Google OAuth login (Passport.js) alongside a separate employee login flow
-- Session-based authentication using `express-session` with a MongoDB-backed session store
-- Administrative dashboards for pets, products, and adoption ads
+
+- Google OAuth login (Passport.js) and employee/administrator credential login both use server-side sessions
+- Session cookies are managed with `express-session` and a MongoDB-backed session store; the React Axios client sends credentials with API requests
+- Privileged pet, medical-record, employee, product, order, expense, feedback, notification, and Gemini endpoints reject unauthenticated requests with HTTP `401`
+- Appointment routes enforce both authentication and ownership/assignment checks;
+  changing a user ID or appointment ID in the URL does not grant access to another
+  user's appointment
+- `GET /employee/booking-options` is intentionally public for the booking form and
+  returns only `_id`, first name, last name, and role; full employee records remain
+  behind authentication
+- Adoption-ad routes under `/PetAd/admin/*` additionally require the authenticated employee to have the `Admin` role and return HTTP `403` for insufficient privileges
+- Employee and administrator login regenerates the session before storing identity data, and the stored session/response does not include the password
+- Employee and administrator logout clears the server-side employee session as well as the corresponding browser state
 
 ### Notifications & Feedback
 - In-app notifications
-- User feedback submission form
+- Responsive community feedback page at `/feedbackform`, styled with the same
+  navy/indigo design system as the home page
+- Community rating summary, review cards, accessible star selection, character-counted
+  feedback entry, and inline edit/delete controls for the signed-in user's reviews
+- Explicit loading, empty, success, error, and signed-out states, with API requests
+  using the deployable `REACT_APP_API_BASE_URL` configuration
 
 ## Technology Stack
 
-**Frontend:** React, React Router, React-Bootstrap, Chart.js / Recharts, Google Maps API, Firebase SDK
+**Frontend:** React 18, React Router, React-Bootstrap, Chart.js / Recharts, Google Maps API, Firebase Web SDK
 
-**Backend:** Node.js, Express, Passport.js (Google OAuth), MongoDB with Mongoose, Firebase Admin SDK
+**Backend:** Node.js, Express, Passport.js (Google OAuth), MongoDB with Mongoose
 
 **IoT:** BBC micro:bit firmware, Cloudflare Worker (data relay), Firebase Realtime Database
 
@@ -65,10 +98,10 @@ Pet Health Tracker/   IoT firmware, hardware design files, and the Cloudflare Wo
 ## Getting Started
 
 ### Prerequisites
-- Node.js and npm (or yarn)
+- Node.js and npm
 - A MongoDB instance (local or hosted, e.g. MongoDB Atlas)
-- A Firebase project (Realtime Database, and a service account for the backend)
-- A Google Cloud OAuth 2.0 client (for Google login)
+- A Firebase project with Realtime Database enabled for the IoT dashboard
+- A Google Cloud OAuth 2.0 Web client (for Google login)
 - A Gemini API key (for the AI training assistant)
 
 ### Backend Setup
@@ -77,21 +110,54 @@ cd backend
 npm install
 ```
 Create a `.env` file in `backend/` using `.env.example` as the template, with values for:
+- `PORT`, `NODE_ENV`, `FRONTEND_URL`
 - `MONGODB_URL`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URL`
-- `FRONTEND_URL`
-- `SESSION_SECRET`
-- `NODE_ENV`
+- `SESSION_SECRET`, `JWT_SECRET`
 - `GEMINI_API_KEY`
 
-A Firebase service-account credential is also required by the backend (used by `backend/src/utils/firebase.js`).
+Generate separate random values for `SESSION_SECRET` and `JWT_SECRET`:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Run the command twice and use a different output for each variable.
+
+For MongoDB Atlas, ensure that the database user exists and that the machine running the backend is included in the Atlas IP access list. If the password contains reserved URL characters, encode them in `MONGODB_URL`.
+
+#### Google OAuth Setup
+
+In the Google Cloud project associated with the application:
+
+1. Open **Google Auth Platform > Branding** and set a meaningful application name, such as **AI-IoT Pet Care System**.
+2. Under **Audience**, add the required test users while the app remains in testing mode.
+3. Under **Clients**, create a **Web application** OAuth client.
+4. Add `http://localhost:3000` and `http://localhost:8090` as authorized JavaScript origins.
+5. Add the following exact authorized redirect URI (without a trailing slash):
+
+```text
+http://localhost:8090/auth/google/callback
+```
+
+Copy the resulting client ID and client secret into `backend/.env`. Changing only the OAuth branding name does not require new credentials or environment-variable changes.
 
 Run the API:
 ```bash
 npm run dev    # development, with nodemon
-npm start      # production
+npm start      # run once, without nodemon
 ```
 The server listens on the port in `PORT`, defaulting to `8090`.
+
+#### Employee and Administrator Login
+
+Employee and administrator accounts are read from the MongoDB `Employee` collection. Both interfaces authenticate through `POST /employee/login`, which establishes the server-side session used by protected API routes.
+
+The administrator interface only accepts an employee whose `role` is exactly `Admin`. There are no built-in or client-side `admin`/`admin` credentials. Provision the first administrator through a trusted database or administrative process; do not expose public role assignment or place administrator credentials in this README or an environment file.
+
+After upgrading from the earlier client-only login behavior, log out, clear any stale login data in the browser if necessary, and sign in again so that a valid backend session is created. Direct API clients must retain and send the session cookie with subsequent protected requests. The frontend is already configured to do this.
+
+> **Current limitation:** employee passwords are still stored and compared using the legacy plaintext implementation. Password hashing is a separate unresolved security item and must be implemented before this login is considered production-ready.
 
 ### Frontend Setup
 ```bash
@@ -99,14 +165,96 @@ cd frontend
 npm install
 npm start
 ```
-The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` to be set for the live location map to render. Firebase client configuration for the IoT dashboard is currently defined directly in `frontend/src/firebase.js`.
+The frontend expects `REACT_APP_GOOGLE_MAPS_API_KEY` and the Firebase Web App configuration values in `frontend/.env`. Use `frontend/.env.example` as the template. The IoT dashboard uses Firebase Realtime Database; the main application data remains in MongoDB.
+
+#### Appointment API Access Rules
+
+| Method | Path | Access rule |
+|---|---|---|
+| `POST` | `/api/appointments` | Authenticated user; owner identity comes from the session |
+| `GET` | `/api/appointments/user/:userId` | The path ID must match the authenticated identity |
+| `PUT` | `/api/appointments/:id` | Pet owner or assigned employee; editable fields depend on which participant is acting |
+| `DELETE` | `/api/appointments/:id` | Pet owner or assigned employee |
+| `GET` | `/api/appointments/all` | Authenticated `Admin` only |
+| `GET` | `/employee/booking-options` | Public, limited staff projection used by the booking form |
+
+Appointment notifications are created directly by the backend after a successful
+booking. The backend does not make an unauthenticated HTTP request back into its own
+protected notification API.
+
+#### Update API Field Allowlists
+
+Authenticated update handlers use explicit field allowlists rather than passing the
+request body directly to Mongoose. Database query updates are wrapped in `$set` and
+run schema validators. Fields not listed below—including document IDs, ownership
+references, timestamps, and unexpected properties—are ignored.
+
+| Method and path | Editable fields | Protected examples |
+|---|---|---|
+| `PUT /pet/update/:id` | `petName`, `species`, `bDate`, `gender`, `weight`, `color`, `breed`, `deviceId` | `userId`, `_id` |
+| `PUT /medical/:id` | `visitDate`, `visitType`, `veterinarian`, `diagnosis`, `treatment`, `medications`, `notes`, `followUpDate` | `petId`, `_id`, timestamps |
+| `PUT /api/appointments/:id` as the pet owner | `petName`, `serviceCategory`, `appointmentDate`, `appointmentTime` | `status`, owner/staff identity, timestamps |
+| `PUT /api/appointments/:id` as the assigned employee | `appointmentDate`, `appointmentTime`, `status` | pet details, owner/staff identity, timestamps |
+| `PUT /product/update/:id` | `name`, `description`, `price`, `category`, `stock`, `restockLevel`, `restockAmount`, and a server-processed uploaded image | `_id`, timestamps |
+| `PUT /feedback/edit/:id` | `feedback`, `rating` | `userId`, `userName`, `_id`, `createdAt` |
+
+Document-based update routes for expenses, employees, adoption ads, notifications,
+and stock operations also assign named fields individually; they do not merge an
+unfiltered request body into a persisted object.
+
+#### Firebase Setup
+
+1. Register a Web App in the Firebase project.
+2. Enable Realtime Database and copy its exact database URL.
+3. Copy the Web App configuration fields into `frontend/.env` using `.env.example` as the template.
+4. Restart the frontend after changing environment variables.
+
+Cloud Firestore and a Firebase Admin service-account key are not required by the currently active application routes. The Firebase Web configuration is used by the browser for Realtime Database access. Configure appropriate Realtime Database security rules before production use.
+
+### Automated Tests
+
+Run the backend security and booking regression tests with:
+
+```bash
+cd backend
+npm test -- --runInBand
+```
+
+The appointment suites cover unauthenticated requests, cross-account reads,
+unauthorized update/delete attempts, ownership-field tampering, role-restricted
+all-appointment access, safe booking staff data, same-day bookings, server-derived
+employee details, unavailable employee selections, and invalid update dates. The
+mass-assignment suite submits allowed fields alongside attacker-controlled ownership,
+identity, metadata, and unexpected properties to verify that pet, medical-record,
+product, and feedback updates persist only allowlisted fields.
 
 ### IoT Device
-The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. These are provided for reference and are not part of the npm build.
+The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. Update the worker's Firebase URL and authentication for the selected Firebase project before deploying it. These files are provided for reference and are not part of the npm build.
+
+## Secrets and Environment Files
+
+- Keep runtime credentials in `backend/.env` and frontend configuration in `frontend/.env`.
+- Never commit `.env`, `.env.production`, service-account JSON files, OAuth client secrets, MongoDB credentials, Gemini API keys, session secrets, or JWT secrets.
+- Commit only the provided `.env.example` templates with placeholder values.
+- Firebase Web configuration is not an Admin credential, but API keys should still be restricted to the intended APIs and application origins where supported.
+- If a secret is committed, rotate or revoke it immediately. Deleting it in a later commit does not remove it from Git history.
 
 ## Notes on Current Implementation
+
+- The V02 missing-authentication remediation is applied to the privileged routes listed above. Public browsing and other intentionally public endpoints remain accessible without a session.
+- The V3 appointment IDOR remediation binds user-scoped reads to the authenticated
+  session, checks appointment participation before update/delete operations, prevents
+  ownership reassignment through request bodies, and restricts the all-appointments
+  endpoint to administrators.
+- The V05 mass-assignment remediation applies explicit per-route update allowlists,
+  `$set` query updates, and update-time schema validation. Appointment updates use
+  participant-specific allowlists so owners cannot change workflow status and assigned
+  employees cannot change pet or ownership data.
+- The authentication middleware supports both Passport-based Google sessions and employee/administrator sessions, preventing intermittent `User not authenticated` responses when navigating after a successful employee login.
 - The Gemini-based AI assistant currently powers the pet training module only; other AI-labeled features (e.g. the chatbot) do not call Gemini.
 - The checkout flow captures payment details in the UI but does not process payments through an external gateway.
+- Firebase Realtime Database is used for IoT readings; the application's main records and login sessions remain in MongoDB.
+- The Firebase Admin SDK dependency and legacy helper remain in the repository, but no active route currently requires Firestore or a Firebase service account.
 - `backend/src/API/routes/pet_tracker.js` exists in the codebase but is not currently wired into `backend/src/app.js`.
 - Several legacy backend entry-point files (`app_backup.js`, `app_backup_full.js`, `app_corrupted.js`) remain in `backend/src/` from earlier iterations and are not used by the running app.
 

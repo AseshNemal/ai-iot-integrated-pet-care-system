@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import hrApi from '../utils/hrApi';
 import './ExpensesManagement.css';
 
 const ExpensesManagement = () => {
@@ -23,7 +23,7 @@ const ExpensesManagement = () => {
 
   const fetchExpenses = async () => {
     try {
-      const response = await axios.get('http://localhost:8090/api/expenses');
+      const response = await hrApi.get('/api/expenses');
       setExpenses(response.data);
     } catch (error) {
       console.error('Error fetching expenses:', error);
@@ -41,7 +41,7 @@ const ExpensesManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8090/api/expenses', formData);
+      const response = await hrApi.post('/api/expenses', formData);
       setExpenses(prev => [...prev, response.data]);
       setFormData({
         itemName: '',
@@ -66,7 +66,7 @@ const ExpensesManagement = () => {
       costPerItem: expenseToUpdate.costPerItem
     });
     try {
-      await axios.delete(`http://localhost:8090/api/expenses/${id}`);
+      await hrApi.delete(`/api/expenses/${id}`);
       setExpenses(prev => prev.filter(expense => expense._id !== id));
     } catch (error) {
       console.error('Error deleting expense:', error);
@@ -80,7 +80,7 @@ const ExpensesManagement = () => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`http://localhost:8090/api/expenses/${expenseToDelete._id}`);
+      await hrApi.delete(`/api/expenses/${expenseToDelete._id}`);
       setExpenses(prev => prev.filter(expense => expense._id !== expenseToDelete._id));
       setShowDeleteConfirm(false);
       setExpenseToDelete(null);
@@ -240,4 +240,4 @@ Total Cost: Rs. ${totalCost}
   );
 };
 
-export default ExpensesManagement; 
+export default ExpensesManagement;

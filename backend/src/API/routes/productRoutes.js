@@ -2,6 +2,17 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer')
 const Product = require('../model/Product');
+const { authenticate } = require('../middleware/auth.middlewere');
+
+const editableProductFields = [
+    'name',
+    'description',
+    'price',
+    'category',
+    'stock',
+    'restockLevel',
+    'restockAmount'
+];
 
 // Multer storage setup
 const storage = multer.diskStorage({
@@ -18,7 +29,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 //Add New Product
-router.post('/add', upload.single("image"), async (req, res) => {
+router.post('/add', authenticate, upload.single("image"), async (req, res) => {
     try {
         const { name, description, price, category, stock, restockLevel, restockAmount } = req.body;
         const image = req.file ? req.file.path : "";
@@ -32,20 +43,16 @@ router.post('/add', upload.single("image"), async (req, res) => {
 });
 
 //Update a product
-router.put('/update/:id', upload.single("image"), async (req, res) => {
+router.put('/update/:id', authenticate, upload.single("image"), async (req, res) => {
     try {
-        const { name, description, price, category, stock, restockLevel, restockAmount } = req.body;
         const image = req.file ? req.file.path : undefined;
+        const updateData = {};
 
-        const updateData = {
-            name,
-            description,
-            price,
-            category,
-            stock,
-            restockLevel,
-            restockAmount
-        };
+        editableProductFields.forEach((field) => {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                updateData[field] = req.body[field];
+            }
+        });
 
         if (image) {
             updateData.image = image;
@@ -53,8 +60,8 @@ router.put('/update/:id', upload.single("image"), async (req, res) => {
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
-            updateData,
-            { new: true }
+            { $set: updateData },
+            { new: true, runValidators: true }
         );
 
         if (!updatedProduct) {
@@ -68,7 +75,7 @@ router.put('/update/:id', upload.single("image"), async (req, res) => {
 });
 
 //Restock a Product if Needed
-router.put('/restock/:id', async (req, res) => {
+router.put('/restock/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const product = await Product.findById(id);
@@ -90,7 +97,7 @@ router.put('/restock/:id', async (req, res) => {
 });
 
 //Reduce Stock and Trigger Restock if Needed
-router.put('/reduce-stock/:id', async (req, res) => {
+router.put('/reduce-stock/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const { quantity } = req.body;
@@ -120,7 +127,7 @@ router.put('/reduce-stock/:id', async (req, res) => {
 });
 
 //Delete a product
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', authenticate, async (req, res) => {
     try {
         const { id } = req.params;
         const deletedProduct = await Product.findByIdAndDelete(id);

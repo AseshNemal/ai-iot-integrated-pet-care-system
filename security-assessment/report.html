@@ -55,7 +55,8 @@
   .note-box { border-left: 4px solid #b7791f; background: #fdf6ec; padding: 8px 12px; margin: 10px 0; font-size: 9.3pt; }
   .info-box { border-left: 4px solid #2461a8; background: #eef5fc; padding: 8px 12px; margin: 10px 0; font-size: 9.3pt; }
   .ok-box { border-left: 4px solid #2f6f3e; background: #eef7ef; padding: 8px 12px; margin: 10px 0; font-size: 9.3pt; }
-  .section-break { page-break-before: always; }
+  .section-break { display: none; }
+  .section-break + h2 { page-break-before: always; break-before: page; }
   ul, ol { margin-top: 4px; }
   .small { font-size: 8.6pt; color: #667; }
   .screenshot-slot { border: 2px dashed #c3cbd6; border-radius: 6px; padding: 26px; text-align: center; color: #9aa5b3; font-style: italic; margin: 8px 0; font-size: 9pt; }
@@ -70,10 +71,10 @@
   <div class="subtitle">AI- and IoT-Integrated Pet Care System</div>
   <div class="metabox">
     <div><strong>Module:</strong> SE4030 Secure Software Development</div>
-    <div><strong>Assessment phase:</strong> Vulnerability Identification (read-only, pre-remediation)</div>
-    <div><strong>Report date:</strong> 20 September 2026</div>
+    <div><strong>Assessment phase:</strong> Vulnerability Identification with V02 Remediation Update</div>
+    <div><strong>Report date:</strong> 24 September 2026 (original assessment: 20 September 2026)</div>
     <div><strong>Repository:</strong> ai-iot-integrated-pet-care-system</div>
-    <div><strong>Base commit:</strong> <span class="mono">c3e780a3ae4489653ab9e4d333dae96cfd4931a6</span> (verified via <span class="mono">git rev-parse HEAD</span>) — "docs: update project setup and add environment templates"</div>
+    <div><strong>Original assessment base commit:</strong> <span class="mono">c3e780a3ae4489653ab9e4d333dae96cfd4931a6</span> - "docs: update project setup and add environment templates"</div>
     <div><strong>Group / members:</strong> <span class="placeholder">[Insert group number and member names / index numbers]</span></div>
     <div><strong>Supervisor:</strong> <span class="placeholder">[Insert lecturer / module leader name]</span></div>
   </div>
@@ -112,12 +113,14 @@
 </table>
 
 <h3>1.2 Modified Project (Post-Remediation)</h3>
-<div class="note-box">This assessment is the <strong>pre-remediation</strong> baseline. No source code, configuration, dependencies, or Git history were changed while producing it. This section will be completed in the remediation phase once fixes for the selected vulnerabilities have been implemented and verified.</div>
+<div class="ok-box">The original assessment remains the pre-remediation baseline. On 24 September 2026, V02 was remediated and verified as a focused follow-up. No other finding is represented as fixed by this update.</div>
 <table>
   <tr><th style="width:26%">Field</th><th>Value</th></tr>
-  <tr><td>Vulnerabilities remediated</td><td class="placeholder">To be completed after Phase 2 (remediation)</td></tr>
-  <tr><td>New security controls added</td><td class="placeholder">To be completed after Phase 2 — e.g. authentication middleware coverage, password hashing, CSRF protection, Helmet headers, upload validation, rate limiting, OIDC feature</td></tr>
-  <tr><td>OAuth/OIDC feature added</td><td class="placeholder">To be completed — see §8 for the current OAuth baseline this will extend</td></tr>
+  <tr><td>Vulnerabilities remediated</td><td><strong>V02 only</strong> - Broken Access Control Across Privileged API Routes</td></tr>
+  <tr><td>New security controls added</td><td>The <span class="mono">authenticate</span> middleware now precedes the V02-affected privileged handlers across ten route modules and recognizes both Google/Passport identities and server-side employee/admin sessions. A reusable <span class="mono">authorizeRoles</span> guard restricts every PetAd <span class="mono">/admin/*</span> route to the <span class="mono">Admin</span> role. User documents now have a constrained <span class="mono">User</span>/<span class="mono">Employee</span>/<span class="mono">Admin</span> role with a default of <span class="mono">User</span>.</td></tr>
+  <tr><td>Frontend session compatibility</td><td>Axios is configured with <span class="mono">withCredentials = true</span> so the browser sends the server session cookie to protected backend routes. Employee and administrator logins now establish and clear a server-side session rather than relying only on browser <span class="mono">localStorage</span>.</td></tr>
+  <tr><td>Verification completed</td><td>Route-structure assertions, middleware 401/403 behavior checks, live localhost requests across all affected modules, backend startup, and an optimized frontend production build.</td></tr>
+  <tr><td>OAuth/OIDC feature added</td><td>No. The existing Google OAuth/Passport session flow is reused; adding a new OIDC feature was outside this focused V02 remediation.</td></tr>
 </table>
 
 <!-- ============ METHODOLOGY ============ -->
@@ -141,7 +144,7 @@
 <table>
 <tr><th>ID</th><th>Vulnerability</th><th>Component</th><th>OWASP</th><th>Sev.</th><th>Confidence</th><th>Distinct?</th><th>Demo Difficulty</th></tr>
 <tr><td>V01</td><td>Secrets committed to source control</td><td>Repo-wide config</td><td>A02 / A05</td><td><span class="badge sev-Critical">Critical</span></td><td>Verified</td><td>Yes</td><td>Easy</td></tr>
-<tr><td>V02</td><td>Broken access control on privileged CRUD/admin routes</td><td>Backend routes (multiple)</td><td>A01</td><td><span class="badge sev-Critical">Critical</span></td><td>Verified</td><td>Yes</td><td>Easy</td></tr>
+<tr><td>V02</td><td>Broken access control on privileged CRUD/admin routes <span class="status-badge">Remediated</span></td><td>Backend routes (multiple)</td><td>A01</td><td><span class="badge sev-Critical">Critical</span></td><td>Verified; fix verified 24 Sep 2026</td><td>Yes</td><td>Easy</td></tr>
 <tr><td>V03</td><td>IDOR on appointment endpoints despite authentication</td><td>appointmentRoutes.js</td><td>A01</td><td><span class="badge sev-High">High</span></td><td>Verified</td><td>Yes</td><td>Easy</td></tr>
 <tr><td>V04</td><td>Fail-open authorization on notification endpoints</td><td>notificationRoutes.js</td><td>A01</td><td><span class="badge sev-High">High</span></td><td>Verified</td><td>Yes</td><td>Easy</td></tr>
 <tr><td>V05</td><td>Mass assignment in update handlers</td><td>pets.js, medicalRecords.js, appointmentRoutes.js</td><td>A08</td><td><span class="badge sev-Medium">Medium</span></td><td>Verified</td><td>Yes</td><td>Medium</td></tr>
@@ -175,7 +178,7 @@
 <!-- ============ DETAILED FINDINGS ============ -->
 <div class="section-break"></div>
 <h2 id="detailed">4. Detailed Vulnerability Findings</h2>
-<p class="small">Each entry below follows the same structure: Status, Affected files, Affected code, Evidence, Root cause, Attack scenario, Impact, OWASP classification, CWE, Severity (with rationale), Safe demonstration method, Potential remediation (not yet implemented), and Distinctness.</p>
+<p class="small">Each entry below follows the same structure: Status, Affected files, Affected code, Evidence, Root cause, Attack scenario, Impact, OWASP classification, CWE, Severity (with rationale), Safe demonstration method, Potential remediation, and Distinctness. V02 additionally records the implemented remediation and post-remediation verification.</p>
 
 <div class="vuln-card">
   <div class="vuln-head"><h3>V01 — Sensitive Credentials Committed to Source Control</h3><span class="badge sev-Critical">Critical</span></div>
@@ -207,12 +210,12 @@
 
 <div class="vuln-card">
   <div class="vuln-head"><h3>V02 — Broken Access Control Across Privileged API Routes</h3><span class="badge sev-Critical">Critical</span></div>
-  <div class="tags"><span class="tag-pill">Status: Verified from source</span><span class="tag-pill">OWASP A01:2021</span><span class="tag-pill">CWE-862</span></div>
+  <div class="tags"><span class="tag-pill">Status: Remediated and verified 24 Sep 2026</span><span class="tag-pill">OWASP A01:2021</span><span class="tag-pill">CWE-862</span></div>
   <span class="field-label">Affected files</span>
   <span class="mono">employeeRoutes.js</span>, <span class="mono">medicalRecords.js</span>, <span class="mono">pets.js</span>, <span class="mono">productRoutes.js</span>, <span class="mono">orderRoutes.js</span>, <span class="mono">expenseRoutes.js</span>, <span class="mono">feedbackRoutes.js</span>, <span class="mono">PetAdRoutes.js</span> (all <span class="mono">/admin/*</span> sub-routes), <span class="mono">notificationRoutes.js</span> (create routes), <span class="mono">gemini.js</span>
-  <span class="field-label">Affected code</span>
+  <span class="field-label">Original affected code (pre-remediation)</span>
   None of these route files import or apply the project's own <span class="mono">authenticate</span> middleware (<span class="mono">backend/src/API/middleware/auth.middlewere.js</span>). A repository-wide grep for <span class="mono">authenticate</span> shows it is used only inside <span class="mono">appointmentRoutes.js</span> and the base <span class="mono">/user</span> route.
-  <span class="field-label">Evidence</span>
+  <span class="field-label">Original evidence</span>
   <ul>
     <li><span class="mono">employeeRoutes.js</span>: <span class="mono">POST /create</span>, <span class="mono">GET /</span>, <span class="mono">GET /get</span>, <span class="mono">GET /count</span>, <span class="mono">DELETE /:id</span>, <span class="mono">PUT /:id</span>, <span class="mono">POST /appointment</span>, <span class="mono">DELETE /sorted-appointment-data</span> (a raw <span class="mono">deleteMany({})</span>) — all reachable with no session/token.</li>
     <li><span class="mono">medicalRecords.js</span>: full CRUD on pet medical records, no auth on any route.</li>
@@ -234,7 +237,15 @@
   <span class="field-label">CWE</span> CWE-862 (Missing Authorization)
   <span class="field-label">Severity: Critical</span> — Unauthenticated full CRUD (including delete) on nearly every business entity in the system, plus the ability to self-provision a privileged "employee" identity.
   <span class="field-label">Safe demonstration method</span> From a local instance, issue unauthenticated <span class="mono">curl</span> requests (e.g. <span class="mono">POST /employee/create</span> with <span class="mono">role: "Admin"</span>, then <span class="mono">GET /employee</span>) against <span class="mono">localhost:8090</span> only — no external target.
-  <span class="field-label">Potential remediation (not yet implemented)</span> Apply the existing <span class="mono">authenticate</span> middleware (or a role-aware equivalent) to every privileged route; add an explicit admin/employee role check for the <span class="mono">/admin/*</span> PetAd routes; never trust an unauthenticated request to assign a role.
+  <span class="field-label">Remediation implemented</span>
+  <ul>
+    <li>Applied <span class="mono">authenticate</span> before every V02-affected privileged handler in <span class="mono">employeeRoutes.js</span>, <span class="mono">medicalRecords.js</span>, <span class="mono">pets.js</span>, <span class="mono">productRoutes.js</span>, <span class="mono">orderRoutes.js</span>, <span class="mono">expenseRoutes.js</span>, <span class="mono">feedbackRoutes.js</span>, <span class="mono">notificationRoutes.js</span>, and <span class="mono">gemini.js</span>.</li>
+    <li>Added <span class="mono">authorizeRoles</span> and required both authentication and the <span class="mono">Admin</span> role on all six PetAd <span class="mono">/admin/*</span> routes.</li>
+    <li>Added a constrained role field to <span class="mono">user.model.js</span>, defaulting all ordinary and legacy users without an assigned role to <span class="mono">User</span>. Administrative access must be provisioned through a trusted database/administration process; no public role-elevation endpoint was added.</li>
+    <li>Enabled Axios credential forwarding in <span class="mono">frontend/src/index.js</span> and added server-side employee/admin session creation and logout, so both Google/Passport and employee authentication flows work on protected routes.</li>
+  </ul>
+  <span class="field-label">Post-remediation verification</span> Unauthenticated live requests to representative endpoints in every affected module returned HTTP <span class="mono">401</span> before reaching a data handler. An authenticated non-admin identity returned HTTP <span class="mono">403</span> from the PetAd role guard, while an <span class="mono">Admin</span> identity passed the guard. Static route assertions confirmed that authentication is the first handler on every protected route, all affected routers loaded successfully, the backend started normally, and the frontend production build completed.
+  <div class="ok-box"><strong>Result:</strong> V02 is remediated. The separate V03 object-level authorization issue and V04 fail-open notification issue were intentionally not changed and remain open.</div>
   <span class="field-label">Distinctness</span> One consolidated root cause (per the assignment's anti-duplication rule) covering ~10 route files that all suffer from the identical "no authentication middleware applied" problem — intentionally <em>not</em> split into one finding per route/collection. Distinct from V03/V04 (authentication present but authorization logic itself is broken) and V20 (identity spoofing even where some check exists).
 </div>
 
@@ -901,6 +912,7 @@ async function handleRequest(request) {
 <div class="section-break"></div>
 <h2 id="impact-ranking">7. Most-Affecting (Highest Real-World Impact) Vulnerabilities</h2>
 <p>This ranking is independent of the SE4030 recommendation above — it is ordered purely by realistic worst-case security consequence: data exposure, account/system compromise, privilege escalation, data modification/deletion, credential/infrastructure exposure, scope (how many users/resources), financial impact, and whether authentication is required to exploit.</p>
+<div class="info-box"><strong>Baseline note:</strong> This ranking records the original pre-remediation risk. V02 was subsequently remediated on 24 September 2026; its row is retained to preserve the assessment baseline and before/after traceability.</div>
 <table>
 <tr><th>Rank</th><th>Vulnerability</th><th>Sev.</th><th>Main impact</th><th>Affected scope</th><th>Auth required?</th><th>Exploitability</th><th>Why highly affecting</th></tr>
 <tr><td>1</td><td>V01 — Secrets in source control</td><td>Critical</td><td>Full DB + Firebase Admin compromise</td><td>Entire system, all users</td><td>No (repo/clone access only — repository is private)</td><td>Trivial once accessed</td><td>A single exposure grants unmediated, rule-bypassing access to every data store the app uses.</td></tr>
@@ -942,16 +954,24 @@ async function handleRequest(request) {
 <!-- ============ UNRESOLVED ============ -->
 <div class="section-break"></div>
 <h2 id="unresolved">9. Unresolved Vulnerabilities</h2>
-<p>No remediation has been performed at this stage of the assignment. Every finding in §4–§5 (V01–V29) is therefore:</p>
-<div class="note-box"><strong>Status: Identified — Not Yet Remediated</strong></div>
-<p>The remediation phase will select at least seven vulnerabilities from §6's recommended set, implement fixes, and update this report with before/after evidence for each selected item (see §10).</p>
+<p>V02 has been remediated and verified. Every other finding or candidate in §4-§5 retains its original assessment status and remains outside the scope of this update.</p>
+<div class="note-box"><strong>Still unresolved in this report:</strong> V01 and V03-V29. In particular, V03 and V04 remain open because their object-level and fail-open authorization mechanisms are distinct from V02's missing authentication gates.</div>
+<p>Future remediation work should update this section and §10 with separate before/after evidence for each additional selected vulnerability.</p>
 
 <!-- ============ TESTING ============ -->
 <div class="section-break"></div>
 <h2 id="testing">10. Testing — Before / After Remediation</h2>
-<p class="placeholder">Not yet performed. This assessment covers the identification phase only. Once remediation is complete for the selected vulnerability set, this section will be populated with, for each fixed vulnerability: the pre-fix demonstration (request/response, or screenshot), the applied code change, and the post-fix verification showing the exploit no longer succeeds.</p>
-<div class="screenshot-slot">Before-remediation evidence placeholder — request/response captures or screenshots per selected vulnerability</div>
-<div class="screenshot-slot">After-remediation evidence placeholder — verification that each fix holds</div>
+<h3>10.1 V02 - Broken Access Control Across Privileged API Routes</h3>
+<table>
+  <tr><th style="width:24%">Stage</th><th>Evidence</th></tr>
+  <tr><td>Before remediation</td><td>Source review confirmed that the privileged handlers listed in V02 had no mandatory authentication middleware. An anonymous caller could reach employee, medical-record, pet, product, order-listing, expense, feedback-mutation, notification-creation, PetAd-admin, and Gemini handlers.</td></tr>
+  <tr><td>Implemented control</td><td>Mandatory server-side session authentication was placed before the affected handlers. The middleware accepts Google/Passport identities and authenticated employee/admin sessions; PetAd admin routes additionally require the <span class="mono">Admin</span> role. Axios includes session credentials for protected frontend requests.</td></tr>
+  <tr><td>Automated structural check</td><td>All ten affected routers loaded successfully. Assertions inspected each Express route stack and confirmed that <span class="mono">authenticate</span> is the first handler on every V02-protected route; all six PetAd admin routes also contain the role guard.</td></tr>
+  <tr><td>Live negative test</td><td>Fifteen representative unauthenticated requests were sent to a local backend instance across the affected modules. Every request returned HTTP <span class="mono">401</span>; no protected data handler was reached.</td></tr>
+  <tr><td>Role test</td><td>The authorization middleware returned HTTP <span class="mono">403</span> for an authenticated <span class="mono">User</span> and allowed an authenticated <span class="mono">Admin</span>.</td></tr>
+  <tr><td>Regression/build check</td><td>The backend started normally, <span class="mono">git diff --check</span> passed, and the optimized React production build completed successfully. Existing unrelated ESLint warnings were reported but did not fail the build.</td></tr>
+</table>
+<div class="ok-box"><strong>After-remediation result:</strong> Anonymous access to the V02 endpoints is blocked. Google users and server-authenticated employees are recognized consistently, PetAd administrative actions require an authenticated administrator, and the frontend forwards the session cookie on protected requests.</div>
 
 <!-- ============ BEST PRACTICES ============ -->
 <div class="section-break"></div>
@@ -979,7 +999,8 @@ async function handleRequest(request) {
   <li><strong>Strong candidate — requires runtime confirmation (2 of 29):</strong> V12 (CSRF exploitability against the live session/cookie configuration) and V23 (OAuth <span class="mono">state</span>-parameter weakness under the live Passport/session interaction).</li>
 </ul>
 <p>All 32 vulnerability candidates supplied at the start of this engagement were individually checked against the current codebase (see §2's checklist), with two additional findings (V08, V09) surfaced during review. Several findings from an earlier draft of this report were corrected after review: the repository-visibility claim, the OAuth-secret impact framing (V01), the V13 SSRF demonstration and severity, the V14 path-traversal claim, the V19 stock-depletion claim, the V20 scope, and the V24 session-ID/<span class="mono">httpOnly</span> claim were each revised to match only what the source code actually supports.</p>
-<p>No source code, configuration, dependencies, or Git history were modified in the course of this assessment, and no secret values were recorded or disclosed anywhere in this report.</p>
+<p><strong>Remediation update:</strong> V02 is now fixed and verified using mandatory session authentication on the affected privileged routes, explicit role-based authorization for PetAd administration, and frontend session-cookie forwarding. All other findings retain their original status.</p>
+<p>The original identification assessment was read-only. Source code was subsequently modified only for the focused V02 remediation described above; no dependencies or Git history were changed, and no secret values were recorded or disclosed anywhere in this report.</p>
 
 <!-- ============ REFERENCES ============ -->
 <div class="section-break"></div>

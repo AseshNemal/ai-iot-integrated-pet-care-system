@@ -19,3 +19,4 @@ backend/src/utils/firebase-service-account.json
 # Dependencies / OS files
 node_modules/
 .DS_Store
+CLAUDE.md

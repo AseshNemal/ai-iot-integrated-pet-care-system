@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
+import "./Header.css";
 
 function Header() {
   const [user, setUser] = useState(null);
@@ -25,7 +27,7 @@ function Header() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch("http://localhost:8090/get-session", { 
+        const response = await fetch(`${API_BASE_URL}/get-session`, {
           credentials: "include" 
         });
         if (!response.ok) throw new Error('Session fetch failed');
@@ -59,6 +61,21 @@ function Header() {
 
     return () => clearTimeout(handler);
   }, [searchTerm, allSearchOptions]);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setUser(null);
+      navigate("/");
+    }
+  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -107,7 +124,7 @@ function Header() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light">
+    <nav className="site-header navbar navbar-expand-lg navbar-light bg-light">
       <button
         className="navbar-toggler"
         type="button"
@@ -119,7 +136,7 @@ function Header() {
       >
         <span className="navbar-toggler-icon"></span>
       </button>
-      <Link to="/" className="navbar-brand">PetWellness</Link>
+      <Link to="/" className="navbar-brand">Pet Wellness Hub</Link>
 
       <div className="collapse navbar-collapse" id="navbarTogglerDemo03">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
@@ -127,19 +144,16 @@ function Header() {
             <Link to="/" className="nav-link">Home <span className="sr-only"></span></Link>
           </li>
           <li className="nav-item">
-            <Link to="/product/all" className="nav-link">Shopping</Link>
+            <Link to="/pet" className="nav-link">My pets</Link>
           </li>
           <li className="nav-item">
-            <Link to="/appointments" className="nav-link">Services</Link>
+            <Link to="/appointments" className="nav-link">Appointments</Link>
           </li>
           <li className="nav-item">
-            <Link to="/adoption-portal" className="nav-link">Adoption Portal</Link>
+            <Link to="/adoption-portal" className="nav-link">Adoption</Link>
           </li>
           <li className="nav-item">
-            <Link to="/pet" className="nav-link">Pet</Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/pet" className="nav-link">Medical History</Link>
+            <Link to="/product/all" className="nav-link">Shop</Link>
           </li>
           <li className="nav-item">
             <Link to="/AboutUs" className="nav-link">About us</Link>
@@ -205,11 +219,12 @@ function Header() {
                   >
                     {user.image && (
                       <img
-                        src={user.image.replace('=s96-c', '=s200-c')}
+                        src={user.image}
                         alt="Profile"
                         className="rounded-circle mr-2"
                         width="32"
                         height="32"
+                        referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/default-profile.png';
@@ -222,7 +237,7 @@ function Header() {
                     <Link to="/profile" className="dropdown-item">Profile</Link>
                     <Link to="/notifications" className="dropdown-item">Notifications</Link>
                     <Link to="/appointments/manage" className="dropdown-item">My Appointment</Link>
-                    <a href="http://localhost:8090/logout" className="dropdown-item">Logout</a>
+                    <button type="button" onClick={handleLogout} className="dropdown-item">Logout</button>
                   </div>
                 </div>
               ) : (

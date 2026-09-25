@@ -1,0 +1,441 @@
+/*
+ * Styles scoped to the pet record page only. Mirrors the design tokens and
+ * section rhythm used on the homepage (see home.css). Every class is
+ * prefixed "pwh-record-" so it cannot collide with or affect other pages.
+ */
+
+.pwh-record-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #e5484d;
+  --pwh-danger-dark: #c53030;
+
+  background: var(--pwh-tint);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  min-height: 100vh;
+  padding: 40px 20px 72px;
+}
+
+.pwh-record-page *,
+.pwh-record-page *::before,
+.pwh-record-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-record-shell {
+  margin: 0 auto;
+  max-width: 760px;
+  width: 100%;
+}
+
+.pwh-record-back {
+  background: none;
+  border: none;
+  color: var(--pwh-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  padding: 6px 0;
+}
+
+.pwh-record-back:hover {
+  color: var(--pwh-primary-dark);
+  text-decoration: underline;
+}
+
+.pwh-record-back:focus-visible,
+.pwh-record-page button:focus-visible,
+.pwh-record-page input:focus-visible {
+  outline: 2px solid var(--pwh-primary);
+  outline-offset: 2px;
+}
+
+.pwh-record-card {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.pwh-record-header {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.pwh-record-avatar {
+  align-items: center;
+  background: var(--pwh-primary);
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 1.6rem;
+  font-weight: 800;
+  height: 72px;
+  justify-content: center;
+  overflow: hidden;
+  width: 72px;
+}
+
+.pwh-record-avatar img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.pwh-record-identity h1 {
+  color: var(--pwh-ink);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0 0 4px;
+}
+
+.pwh-record-species {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.pwh-record-vitals {
+  border-bottom: 1px solid var(--pwh-border);
+  border-top: 1px solid var(--pwh-border);
+  display: grid;
+  gap: 20px 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 24px;
+  padding: 18px 0;
+}
+
+.pwh-record-vitals__item {
+  border-left: 1px solid var(--pwh-border);
+  padding: 0 18px;
+}
+
+.pwh-record-vitals__item:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.pwh-record-vitals__item dt {
+  color: var(--pwh-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.pwh-record-vitals__item dd {
+  color: var(--pwh-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pwh-record-note {
+  background: var(--pwh-tint);
+  border-left: 3px solid var(--pwh-primary);
+  border-radius: 2px;
+  color: var(--pwh-ink);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 28px;
+  padding: 14px 18px;
+}
+
+.pwh-record-note strong {
+  font-weight: 700;
+}
+
+.pwh-record-history {
+  margin-top: 8px;
+}
+
+.pwh-record-history__header {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.pwh-record-history__header h2 {
+  color: var(--pwh-ink);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-record-history__add {
+  background: var(--pwh-primary);
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 9px 18px;
+}
+
+.pwh-record-history__add:hover {
+  background: var(--pwh-primary-dark);
+}
+
+.pwh-record-history__empty {
+  border: 1px dashed var(--pwh-border);
+  border-radius: 8px;
+  color: var(--pwh-muted);
+  padding: 28px;
+  text-align: center;
+}
+
+.pwh-record-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  position: relative;
+}
+
+.pwh-record-timeline::before {
+  background: var(--pwh-border);
+  bottom: 8px;
+  content: "";
+  left: 5px;
+  position: absolute;
+  top: 8px;
+  width: 2px;
+}
+
+.pwh-record-timeline__item {
+  padding: 0 0 28px 30px;
+  position: relative;
+}
+
+.pwh-record-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.pwh-record-timeline__marker {
+  background: var(--pwh-bg);
+  border: 2px solid var(--pwh-primary);
+  border-radius: 50%;
+  height: 12px;
+  left: 0;
+  position: absolute;
+  top: 4px;
+  width: 12px;
+}
+
+.pwh-record-timeline__row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  justify-content: space-between;
+}
+
+.pwh-record-timeline__row h3 {
+  color: var(--pwh-ink);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pwh-record-timeline__date {
+  color: var(--pwh-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pwh-record-timeline__vet {
+  color: var(--pwh-muted);
+  font-size: 0.875rem;
+  margin: 2px 0 10px;
+}
+
+.pwh-record-timeline__body > p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 6px;
+}
+
+.pwh-record-timeline__label {
+  color: var(--pwh-muted);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.pwh-record-timeline__notes {
+  background: var(--pwh-tint);
+  border-radius: 6px;
+  margin-top: 8px !important;
+  padding: 10px 12px;
+}
+
+.pwh-record-timeline__actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.pwh-record-timeline__actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 2px 0;
+}
+
+.pwh-record-timeline__edit {
+  color: var(--pwh-primary);
+}
+
+.pwh-record-timeline__edit:hover {
+  text-decoration: underline;
+}
+
+.pwh-record-timeline__delete {
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-record-timeline__delete:hover {
+  text-decoration: underline;
+}
+
+.pwh-record-confirm-overlay {
+  align-items: center;
+  background: rgba(23, 32, 51, 0.45);
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+}
+
+.pwh-record-confirm-box {
+  background: var(--pwh-bg);
+  border-radius: 10px;
+  max-width: 360px;
+  padding: 24px;
+  width: 100%;
+}
+
+.pwh-record-confirm-box h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.pwh-record-confirm-box p {
+  color: var(--pwh-muted);
+  font-size: 0.9375rem;
+  margin: 0 0 20px;
+}
+
+.pwh-record-confirm-box__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.pwh-record-btn {
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 9px 18px;
+}
+
+.pwh-record-btn--ghost {
+  background: var(--pwh-tint);
+  border-color: var(--pwh-border);
+  color: var(--pwh-ink);
+}
+
+.pwh-record-btn--ghost:hover {
+  border-color: var(--pwh-muted);
+}
+
+.pwh-record-btn--danger {
+  background: var(--pwh-danger);
+  color: #ffffff;
+}
+
+.pwh-record-btn--danger:hover {
+  background: var(--pwh-danger-dark);
+}
+
+.pwh-record-state {
+  color: var(--pwh-muted);
+  font-size: 1.0625rem;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.pwh-record-state--error {
+  color: var(--pwh-danger-dark);
+}
+
+@media (max-width: 640px) {
+  .pwh-record-page {
+    padding: 28px 16px 56px;
+  }
+
+  .pwh-record-card {
+    padding: 22px;
+  }
+
+  .pwh-record-header {
+    gap: 16px;
+  }
+
+  .pwh-record-avatar {
+    height: 60px;
+    width: 60px;
+  }
+
+  .pwh-record-identity h1 {
+    font-size: 1.5rem;
+  }
+
+  .pwh-record-vitals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pwh-record-vitals__item:nth-child(3) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .pwh-record-history__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwh-record-page *,
+  .pwh-record-page *::before,
+  .pwh-record-page *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

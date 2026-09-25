@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import hrApi from "../utils/hrApi";
 import "../styles/EmployeeDashboard.css";
 
 // Mock data for appointments
@@ -43,36 +44,33 @@ function EmployeeDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Retrieve employee data from localStorage
-    const storedData = localStorage.getItem("employeeData");
-    
-    if (!storedData) {
-      // Redirect to login if no employee data is found
-      navigate("/employee-login");
-      return;
-    }
-    
-    const employee = JSON.parse(storedData);
-    setEmployeeData(employee);
-    
-    // Set appointments based on role
-    const roleAppointments = employee.role.toLowerCase().includes("groom") 
-      ? mockGroomerAppointments 
-      : mockVetAppointments;
-    
-    setAppointments(roleAppointments);
-    
-    // Filter today's appointments
-    const today = new Date().toISOString().split('T')[0];
-    setTodayAppointments(roleAppointments.filter(apt => apt.date === today));
-    
-    // Filter upcoming appointments (not today)
-    setUpcomingAppointments(roleAppointments.filter(apt => apt.date !== today));
+    let active = true;
+    hrApi.get('/employee/me').then(({ data }) => {
+      if (!active) return;
+      const employee = data.user;
+      setEmployeeData(employee);
+      // Set appointments based on the server-verified employee role.
+      const roleAppointments = employee.role.toLowerCase().includes("groom")
+        ? mockGroomerAppointments
+        : mockVetAppointments;
+      setAppointments(roleAppointments);
+      const today = new Date().toISOString().split('T')[0];
+      setTodayAppointments(roleAppointments.filter(apt => apt.date === today));
+      setUpcomingAppointments(roleAppointments.filter(apt => apt.date !== today));
+    }).catch(() => {
+      if (active) navigate('/employee-login');
+    });
+    return () => { active = false; };
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("employeeData");
-    navigate("/employee-login");
+  const handleLogout = async () => {
+    try {
+      await hrApi.post('/employee/logout');
+      setEmployeeData(null);
+      navigate('/employee-login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   if (!employeeData) {
@@ -215,4 +213,4 @@ function EmployeeDashboard() {
   );
 }
 
-export default EmployeeDashboard; 
+export default EmployeeDashboard;

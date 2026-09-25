@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { realtimeDB } from "../firebase";
-import { ref, onValue } from "firebase/database";
-import { Line, Pie } from "react-chartjs-2";
-import { useParams } from 'react-router-dom';
+import axios from "axios";
+import { Line } from "react-chartjs-2";
+import { useParams, Link } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import "./deviceData.css";
 
 import {
   Chart as ChartJS,
@@ -14,7 +14,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement
 } from "chart.js";
 
 ChartJS.register(
@@ -24,9 +23,21 @@ ChartJS.register(
   PointElement,
   Title,
   Tooltip,
-  Legend,
-  ArcElement
+  Legend
 );
+
+const API_BASE = "http://localhost:8090";
+// Poll instead of a live Firebase listener: the dashboard now goes through an
+// authenticated, ownership-checked backend endpoint (GET /pet/tracker/:deviceId)
+// instead of reading the Realtime Database directly from the browser. Matches
+// the poll interval already used for simulator status in PetTracker.js.
+const TELEMETRY_POLL_MS = 5000;
+
+// Simulator devices are allocated starting at this ID by the backend
+// (backend/src/services/iotSimulatorService.js, SIMULATOR_ID_RANGE_START),
+// which is how a paired device is told apart from a physical tracker here.
+const SIMULATOR_ID_RANGE_START = 900001;
+const STEP_GOAL = 5000;
 
 const DeviceData = () => {
   const [deviceData, setDeviceData] = useState([]);
@@ -35,57 +46,76 @@ const DeviceData = () => {
   const [count, setCount] = useState(0);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [selectedDeviceData, setSelectedDeviceData] = useState(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  // 'loading' | 'ok' | 'unauthenticated' | 'forbidden' | 'not-found' | 'error'
+  const [accessState, setAccessState] = useState('loading');
   const { deviceId } = useParams();
 
+  // Fetches from the authenticated, ownership-checked backend endpoint
+  // (GET /pet/tracker/:deviceId) instead of reading the Realtime Database
+  // directly from the browser. The backend derives the caller from their
+  // session and only returns telemetry for devices that belong to them, so
+  // this component no longer decides who is allowed to see what.
   useEffect(() => {
-    const dataRef = ref(realtimeDB, "petcare");
+    let cancelled = false;
 
-    onValue(dataRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const rawData = snapshot.val();
-        console.log("Firebase Data:", rawData);
+    const fetchTelemetry = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/pet/tracker/${deviceId}`);
+        if (cancelled) return;
 
-        const formattedData = Object.keys(rawData).map((key) => ({
-          id: key,
-          DeviceID: rawData[key]["Device ID"] || "Unknown",
-          Latitude: rawData[key].Latitude ? Number(rawData[key].Latitude) : null,
-          Longitude: rawData[key].Longitude ? Number(rawData[key].Longitude) : null,
-          Altitude: rawData[key].Altitude || "N/A",
-          BatteryLevel: rawData[key].Battery ? Number(rawData[key].Battery) : -1,
-          En_Temperature: rawData[key].En_temperature ? Number(rawData[key].En_temperature) : 0,
-          En_Humidity: rawData[key].en_humidity ? Number(rawData[key].en_humidity) : 0,
-          AirQuality: rawData[key].AirQuality ? Number(rawData[key].AirQuality/4) : 0,
-          Temperature: rawData[key].Temperature ? Number(rawData[key].Temperature) : 0,
-          HeartRate: rawData[key].hartrate ? Number(rawData[key].hartrate/5) : 0,
-          Steps: rawData[key].step ? Number(rawData[key].step) : 0,
-          Timestamp: rawData[key].timestamp || "No timestamp",
+        setAccessState('ok');
+        const records = res.data.records || [];
+
+        const formattedData = records.map((record) => ({
+          id: record.id,
+          DeviceID: record["Device ID"] || "Unknown",
+          Latitude: record.Latitude ? Number(record.Latitude) : null,
+          Longitude: record.Longitude ? Number(record.Longitude) : null,
+          Altitude: record.Altitude || "N/A",
+          BatteryLevel: record.Battery ? Number(record.Battery) : -1,
+          En_Temperature: record.En_temperature ? Number(record.En_temperature) : 0,
+          En_Humidity: record.en_humidity ? Number(record.en_humidity) : 0,
+          AirQuality: record.AirQuality ? Number(record.AirQuality / 4) : 0,
+          Temperature: record.Temperature ? Number(record.Temperature) : 0,
+          HeartRate: record.hartrate ? Number(record.hartrate / 5) : 0,
+          Steps: record.step ? Number(record.step) : 0,
+          Timestamp: record.timestamp || "No timestamp",
         }));
 
         const sortedData = formattedData.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         setDeviceData(sortedData);
 
         const recordCount = sortedData.length;
-        console.log("Number of records:", recordCount);
-
-        const latestRecord = sortedData[recordCount - 1];
+        const latestRecord = sortedData[recordCount - 1] || null;
         setLatestData(latestRecord);
         setCount(recordCount);
-
-        setSelectedDeviceId(deviceId)
-        if (selectedDeviceId) {
-          const device = sortedData.find(item => item.DeviceID === selectedDeviceId);
-          setSelectedDeviceData(device || null);
-        }
+        setSelectedDeviceId(deviceId);
+        setSelectedDeviceData(latestRecord);
 
         if (latestRecord && latestRecord.Latitude && latestRecord.Longitude) {
           fetchLocation(latestRecord.Latitude, latestRecord.Longitude);
         }
-      } else {
-        console.log("No data found in Firebase.");
+      } catch (err) {
+        if (cancelled) return;
         setDeviceData([]);
+        setLatestData(null);
+        const status = err.response?.status;
+        if (status === 401) setAccessState('unauthenticated');
+        else if (status === 403) setAccessState('forbidden');
+        else if (status === 404) setAccessState('not-found');
+        else setAccessState('error');
       }
-    });
-  },[selectedDeviceId]);
+    };
+
+    fetchTelemetry();
+    const pollId = setInterval(fetchTelemetry, TELEMETRY_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+    };
+  }, [deviceId]);
 
   const fetchLocation = (latitude, longitude) => {
     console.log(`Attempting to update location with Latitude: ${latitude}, Longitude: ${longitude}`);
@@ -97,13 +127,15 @@ const DeviceData = () => {
     }
   };
 
-  const last20Records = selectedDeviceId 
+  const last20Records = selectedDeviceId
     ? deviceData.filter(d => d.DeviceID === selectedDeviceId).slice(-20)
     : deviceData.slice(count - 21, count - 1);
 
   const last30Records = selectedDeviceId
     ? deviceData.filter(d => d.DeviceID === selectedDeviceId).slice(-30)
     : deviceData.slice(count - 30, count - 1);
+
+  const historyRecords = showAllHistory ? last30Records : last20Records;
 
   // Temperature Chart Data
   const temperatureChartData = {
@@ -150,66 +182,6 @@ const DeviceData = () => {
     ],
   };
 
-  // Battery Level Chart Data
-  const batteryChartData = {
-    labels: last20Records.map((data) => data.Timestamp),
-    datasets: [
-      {
-        label: "Battery Level (%)",
-        data: last20Records.map((data) => data.BatteryLevel),
-        fill: false,
-        borderColor: "rgb(54, 162, 235)",
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Environment Temperature Chart Data
-  const envTemperatureChartData = {
-    labels: last20Records.map((data) => data.Timestamp),
-    datasets: [
-      {
-        label: "Environment Temperature (°C)",
-        data: last20Records.map((data) => data.En_Temperature),
-        fill: false,
-        borderColor: "rgb(153, 102, 255)",
-        backgroundColor: "rgba(153, 102, 255, 0.5)",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Environment Humidity Chart Data
-  const envHumidityChartData = {
-    labels: last20Records.map((data) => data.Timestamp),
-    datasets: [
-      {
-        label: "Environment Humidity (%)",
-        data: last20Records.map((data) => data.En_Humidity),
-        fill: false,
-        borderColor: "rgb(54, 162, 235)",
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Air Quality Chart Data
-  const airQualityChartData = {
-    labels: last20Records.map((data) => data.Timestamp),
-    datasets: [
-      {
-        label: "Air Quality (PPM)",
-        data: last20Records.map((data) => data.AirQuality),
-        fill: false,
-        borderColor: "rgb(255, 159, 64)",
-        backgroundColor: "rgba(255, 159, 64, 0.5)",
-        tension: 0.4,
-      },
-    ],
-  };
-
   // Chart Options
   const chartOptions = {
     responsive: true,
@@ -229,6 +201,9 @@ const DeviceData = () => {
   const stepchartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+    },
     scales: {
       y: {
         ticks: {
@@ -249,64 +224,6 @@ const DeviceData = () => {
         ticks: {
           stepSize: 25,
           callback: (value) => `${value} BPM`,
-        },
-      },
-    },
-  };
-
-  const batteryChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        ticks: {
-          stepSize: 10,
-          callback: (value) => `${value}%`,
-        },
-      },
-    },
-  };
-
-  const envTemperatureChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        min: 0,
-        max: 50,
-        ticks: {
-          stepSize: 5,
-          callback: (value) => `${value}°C`,
-        },
-      },
-    },
-  };
-
-  const envHumidityChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        ticks: {
-          stepSize: 10,
-          callback: (value) => `${value}%`,
-        },
-      },
-    },
-  };
-
-  const airQualityChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        ticks: {
-          stepSize: 50,
-          callback: (value) => `${value} PPM`,
         },
       },
     },
@@ -334,31 +251,11 @@ const DeviceData = () => {
   };
 
   const totalStepsToday = getStepsForToday();
-  const remainingSteps = totalStepsToday < 5000 ? 5000 - totalStepsToday : 0;
-  
-  const pieChartData = {
-    labels: ["Steps Today", "Remaining Steps"],
-    datasets: [
-      {
-        data: [totalStepsToday, remainingSteps],
-        backgroundColor: ["#36A2EB", "#FF6384"],
-        hoverBackgroundColor: ["#36A2EB", "#FF6384"],
-      },
-    ],
-  };
-
-  const pieChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-    },
-  };
+  const stepGoalPercent = Math.min(100, Math.round((totalStepsToday / STEP_GOAL) * 100));
 
   const generateHealthSuggestions = () => {
     if (!latestData) return [];
-    
+
     const suggestions = [];
     const now = new Date();
     const lastUpdate = new Date(
@@ -488,206 +385,381 @@ const DeviceData = () => {
     return "🔋"; // Good
   };
 
+  // Telemetry timestamps are "DD/MM/YYYY, HH:MM:SS" (same shape parsed above
+  // via split/reverse). Used only for the compact "time ago" hero label.
+  const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return null;
+    try {
+      const [datePart, timePart] = timestamp.split(", ");
+      const [day, month, year] = datePart.split("/");
+      const parsed = new Date(`${year}-${month}-${day}T${timePart}`);
+      const seconds = Math.round((Date.now() - parsed.getTime()) / 1000);
+      if (Number.isNaN(seconds)) return timestamp;
+      if (seconds < 5) return "just now";
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.round(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.round(minutes / 60);
+      return `${hours}h ago`;
+    } catch {
+      return timestamp;
+    }
+  };
+
+  const activeDeviceId = selectedDeviceId || selectedDeviceData?.DeviceID || latestData?.DeviceID || "Unavailable";
+  const activeDeviceIdNumeric = Number(activeDeviceId);
+  const isSimulatorDevice = !Number.isNaN(activeDeviceIdNumeric) && activeDeviceIdNumeric >= SIMULATOR_ID_RANGE_START;
+  const hasKnownDeviceType = !Number.isNaN(activeDeviceIdNumeric);
+
+  const connectionLabel = deviceData.length > 0 && latestData
+    ? (isDeviceConnected ? "Live" : "Offline")
+    : "No data";
+  const connectionClass = deviceData.length > 0 && latestData
+    ? (isDeviceConnected ? "device-status--connected" : "device-status--offline")
+    : "device-status--empty";
+
+  const primaryMetrics = [
+    {
+      label: "Body temperature",
+      value: latestData ? latestData.Temperature : "—",
+      unit: latestData ? "°C" : "",
+      symbol: "T",
+      tone: "teal",
+    },
+    {
+      label: "Heart rate",
+      value: latestData ? latestData.HeartRate : "—",
+      unit: latestData ? "BPM" : "",
+      symbol: "♥",
+      tone: "rose",
+    },
+    {
+      label: "Battery",
+      value: latestData && latestData.BatteryLevel >= 0 ? latestData.BatteryLevel : "—",
+      unit: latestData && latestData.BatteryLevel >= 0 ? "%" : "",
+      symbol: latestData ? getBatteryIcon(latestData.BatteryLevel) : "—",
+      tone: "blue",
+    },
+    {
+      label: "Steps today",
+      value: totalStepsToday.toLocaleString(),
+      unit: "steps",
+      symbol: "S",
+      tone: "violet",
+    },
+  ];
+
+  const environmentMetrics = [
+    {
+      label: "Environment temperature",
+      value: latestData ? latestData.En_Temperature : "—",
+      unit: latestData ? "°C" : "",
+      symbol: "T",
+    },
+    {
+      label: "Humidity",
+      value: latestData ? latestData.En_Humidity : "—",
+      unit: latestData ? "%" : "",
+      symbol: "H",
+    },
+    {
+      label: "Air quality",
+      value: latestData ? latestData.AirQuality : "—",
+      unit: latestData ? "PPM" : "",
+      symbol: "AQ",
+    },
+  ];
+
+  // Presentational only — the backend endpoint (GET /pet/tracker/:deviceId)
+  // is what actually enforces authentication and device ownership. This UI
+  // state exists for UX; it is not itself a security boundary.
+  if (accessState === 'loading') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">Loading tracker…</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'unauthenticated') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">
+            <p>Please log in to view this pet's tracker.</p>
+            <Link to="/login" className="dashboard-refresh">Log in</Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'forbidden') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">
+            This device is not associated with one of your pets.
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'not-found') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">No device found with this ID.</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (accessState === 'error') {
+    return (
+      <div className="pet-dashboard">
+        <main className="pet-dashboard__shell">
+          <div className="dashboard-access-state">Could not load tracker data. Please try again.</div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ padding: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-        <h6 style={{ 
-          color: deviceData.length > 0 && latestData ? 
-            (isDeviceConnected ? "#4CAF50" : "#F44336") : 
-            "#9E9E9E"
-        }}>
-          {deviceData.length > 0 && latestData ? 
-            (isDeviceConnected ? "Device Connected" : "Device Not Connected") : 
-            "No Data Available"}
-        </h6>
-        {latestData && latestData.BatteryLevel >= 0 && (
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "5px",
-            padding: "5px 10px",
-            borderRadius: "20px",
-            backgroundColor: "#f8f9fa",
-            border: `2px solid ${getBatteryColor(latestData.BatteryLevel)}`
-          }}>
-            <span>{getBatteryIcon(latestData.BatteryLevel)}</span>
-            <span style={{ fontWeight: "bold", color: getBatteryColor(latestData.BatteryLevel) }}>
-              {latestData.BatteryLevel}%
-            </span>
+    <div className="pet-dashboard">
+      <main className="pet-dashboard__shell">
+        <section className="dashboard-hero" aria-labelledby="pet-tracker-title">
+          <div className="dashboard-hero__identity">
+            <p className="dashboard-hero__context">Live pet monitoring</p>
+            <h1 id="pet-tracker-title">Pet Tracker</h1>
+            <p className="dashboard-hero__device">
+              Device <strong>{activeDeviceId}</strong>
+              {hasKnownDeviceType && (
+                <span className={`device-type-chip ${isSimulatorDevice ? "device-type-chip--simulator" : "device-type-chip--physical"}`}>
+                  {isSimulatorDevice ? "Simulator" : "Physical device"}
+                </span>
+              )}
+            </p>
           </div>
-        )}
-        <button onClick={handleRefresh} style={{ padding: "10px 20px", borderRadius: "20px", fontSize: "16px", border: "none", backgroundColor: "#007bff", color: "white", cursor: "pointer" }}>
-          🔄 Reconnect
-        </button>
-      </div>
 
-      {selectedDeviceData && (
-        <div style={{ 
-          background: '#f8f9fa', 
-          padding: '20px', 
-          borderRadius: '8px',
-          margin: '20px 0',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3>Device Details: {latestData.DeviceID}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
-            <div>
-              <p><strong>Last Location:</strong></p>
-              <p>Latitude: {latestData.Latitude || 'N/A'}</p>
-              <p>Longitude: {latestData.Longitude || 'N/A'}</p>
+          <div className="dashboard-hero__status">
+            <div className="dashboard-hero__status-row">
+              <span className={`device-status ${connectionClass}`}>
+                <span className="device-status__dot" aria-hidden="true" />
+                {connectionLabel}
+              </span>
+              {latestData && latestData.BatteryLevel >= 0 && (
+                <span
+                  className="dashboard-hero__battery"
+                  style={{ "--battery-color": getBatteryColor(latestData.BatteryLevel) }}
+                >
+                  <span aria-hidden="true">{getBatteryIcon(latestData.BatteryLevel)}</span>
+                  {latestData.BatteryLevel}%
+                </span>
+              )}
             </div>
-            <div>
-              <p><strong>Health Metrics:</strong></p>
-              <p>Temperature: {latestData.Temperature}°C</p>
-              <p>Heart Rate: {latestData.HeartRate} BPM</p>
-              <p>Steps: {latestData.Steps}</p>
-            </div>
-            <div>
-              <p><strong>Environment Data:</strong></p>
-              <p>Temperature: {latestData.En_Temperature}°C</p>
-              <p>Humidity: {latestData.En_Humidity}%</p>
-              <p>Air Quality: {latestData.AirQuality} PPM</p>
-            </div>
-            <div>
-              <p><strong>Device Status:</strong></p>
-              <p>Battery: {latestData.BatteryLevel >= 0 ? `${latestData.BatteryLevel}%` : 'N/A'}</p>
-              <p>Last Update: {latestData.Timestamp}</p>
-            </div>
+            <p className="dashboard-hero__updated" title={latestData?.Timestamp || undefined}>
+              <span>Last update</span>
+              <strong>{latestData?.Timestamp ? formatRelativeTime(latestData.Timestamp) : "Not available"}</strong>
+            </p>
+            <button className="dashboard-refresh" type="button" onClick={handleRefresh}>
+              <span aria-hidden="true">↻</span>
+              Reconnect
+            </button>
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* Health Metrics Charts */}
-      <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap" }}>
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Body Temperature Chart</h3>
-          <Line data={temperatureChartData} options={chartOptions} />
-        </div>
-
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Heart Rate Chart</h3>
-          <Line data={heartRateChartData} options={heartRateChartOptions} />
-        </div>
-      </div>
-      <br/><br/>
-
-      {/* Battery and Steps Charts */}
-      <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap" }}>
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Battery Level</h3>
-          <Line data={batteryChartData} options={batteryChartOptions} />
-        </div>
-
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Step Chart</h3>
-          <Line data={stepRateChartData} options={stepchartOptions} />
-        </div>
-      </div>
-      <br/><br/>
-
-      {/* Steps Pie Chart */}
-      <div style={{ width: "90%", height: "300px", margin: "0 auto 50px" }}>
-        <h3>Step Count Today</h3>
-        <Pie data={pieChartData} options={pieChartOptions} />
-        <h6>Steps for Today: {getStepsForToday()}</h6>
-      </div>
-
-      {/* Environment Data Charts */}
-      <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", marginTop: "50px", marginBottom:"100px"}}>
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Environment Temperature</h3>
-          <Line data={envTemperatureChartData} options={envTemperatureChartOptions} />
-        </div>
-        <div style={{ width: "45%", height: "300px" }}>
-          <h3>Environment Humidity</h3>
-          <Line data={envHumidityChartData} options={envHumidityChartOptions} />
-        </div>
-      </div>
-
-      {/* Air Quality Chart */}
-      <div style={{ width: "90%", height: "300px", margin: "0 auto 50px" }}>
-        <h3>Air Quality</h3>
-        <Line data={airQualityChartData} options={airQualityChartOptions} />
-      </div>
-
-      {/* Google Map */}
-      <div style={{ height: "400px", width: "100%", marginTop: "50px" }}>
-        <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
-          <GoogleMap center={location} zoom={15} mapContainerStyle={{ width: "100%", height: "100%" }}>
-            <Marker position={location} />
-          </GoogleMap>
-        </LoadScript>
-      </div>
-
-      <div style={{ 
-        margin: "30px 0",
-        padding: "20px",
-        borderRadius: "8px",
-        backgroundColor: "#f8f9fa",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-      }}>
-        <h2>Health Suggestions</h2>
-        {healthSuggestions.length > 0 ? (
-          <div style={{ display: "grid", gap: "15px" }}>
-            {healthSuggestions.map((suggestion, index) => (
-              <div 
-                key={index}
-                style={{
-                  padding: "15px",
-                  borderRadius: "5px",
-                  backgroundColor: 
-                    suggestion.type === 'danger' ? "#f8d7da" :
-                    suggestion.type === 'warning' ? "#fff3cd" :
-                    "#d1e7dd",
-                  borderLeft: 
-                    suggestion.type === 'danger' ? "5px solid #dc3545" :
-                    suggestion.type === 'warning' ? "5px solid #ffc107" :
-                    "5px solid #198754",
-                  color: 
-                    suggestion.type === 'danger' ? "#721c24" :
-                    suggestion.type === 'warning' ? "#856404" :
-                    "#0f5132"
-                }}
-              >
-                <p style={{ margin: 0, fontWeight: "500" }}>{suggestion.message}</p>
+        <section className="metric-grid metric-grid--primary" aria-label="Current health readings">
+          {primaryMetrics.map((metric) => (
+            <article className={`metric-card metric-card--${metric.tone}`} key={metric.label}>
+              <div className="metric-card__heading">
+                <span className="metric-card__symbol" aria-hidden="true">{metric.symbol}</span>
+                <span>{metric.label}</span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p>No data available to generate suggestions.</p>
-        )}
-      </div>
-
-      {/* Table */}
-      <h2>Device Data {selectedDeviceId ? `(Filtered: ${selectedDeviceId})` : ''}</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Device ID</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Latitude</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Longitude</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Battery Level</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Temperature (°C)</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Heart Rate (BPM)</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Steps</th>
-            <th style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {last20Records.map((data, index) => (
-            <tr key={index}>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.DeviceID}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.Latitude}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.Longitude}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.BatteryLevel}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.Temperature}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.HeartRate}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.Steps}</td>
-              <td style={{ border: "1px solid #ddd", padding: "8px", textAlign: "center" }}>{data.Timestamp}</td>
-            </tr>
+              <p className="metric-card__value">
+                {metric.value}
+                {metric.unit && <span>{metric.unit}</span>}
+              </p>
+            </article>
           ))}
-        </tbody>
-      </table>
+        </section>
+
+        <section className="dashboard-card suggestions-card" aria-labelledby="suggestions-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="suggestions-title">Health alerts</h2>
+              <p>Guidance based on the most recent available readings.</p>
+            </div>
+            <span className="section-heading__count">{healthSuggestions.length}</span>
+          </div>
+          {healthSuggestions.length > 0 ? (
+            <div className="suggestions-list" aria-live="polite">
+              {healthSuggestions.map((suggestion, index) => (
+                <div className={`suggestion suggestion--${suggestion.type}`} key={index}>
+                  <span className="suggestion__icon" aria-hidden="true">
+                    {suggestion.type === "success" ? "✓" : "!"}
+                  </span>
+                  <p>{suggestion.message}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="dashboard-empty">No readings are available to generate suggestions yet.</p>
+          )}
+        </section>
+
+        <section className="dashboard-section" aria-labelledby="health-trends-title">
+          <div className="section-heading section-heading--outside">
+            <div>
+              <h2 id="health-trends-title">Health trends</h2>
+              <p>Recent body temperature and heart rate readings.</p>
+            </div>
+          </div>
+          <div className="chart-grid">
+            <article className="dashboard-card chart-card">
+              <div className="chart-card__heading">
+                <h3>Body temperature</h3>
+                <span>°C</span>
+              </div>
+              <div className="chart-frame">
+                <Line data={temperatureChartData} options={chartOptions} />
+              </div>
+            </article>
+
+            <article className="dashboard-card chart-card">
+              <div className="chart-card__heading">
+                <h3>Heart rate</h3>
+                <span>BPM</span>
+              </div>
+              <div className="chart-frame">
+                <Line data={heartRateChartData} options={heartRateChartOptions} />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="dashboard-section" aria-labelledby="activity-title">
+          <div className="section-heading section-heading--outside">
+            <div>
+              <h2 id="activity-title">Activity &amp; environment</h2>
+              <p>Movement progress and surrounding conditions.</p>
+            </div>
+          </div>
+          <div className="chart-grid">
+            <article className="dashboard-card chart-card activity-card">
+              <div className="chart-card__heading">
+                <h3>Steps</h3>
+                <span>Goal {STEP_GOAL.toLocaleString()}/day</span>
+              </div>
+              <p className="activity-card__value">
+                {totalStepsToday.toLocaleString()}<span> steps today</span>
+              </p>
+              <div className="progress-bar" role="progressbar" aria-valuenow={stepGoalPercent} aria-valuemin={0} aria-valuemax={100}>
+                <div className="progress-bar__fill" style={{ width: `${stepGoalPercent}%` }} />
+              </div>
+              <p className="activity-card__goal">{stepGoalPercent}% of daily goal</p>
+              <div className="chart-frame chart-frame--compact">
+                <Line data={stepRateChartData} options={stepchartOptions} />
+              </div>
+            </article>
+
+            <article className="dashboard-card env-card">
+              <div className="chart-card__heading">
+                <h3>Environment</h3>
+                <span>Live readout</span>
+              </div>
+              <div className="env-compact">
+                {environmentMetrics.map((metric) => (
+                  <div className="env-compact__row" key={metric.label}>
+                    <span className="env-compact__symbol" aria-hidden="true">{metric.symbol}</span>
+                    <span className="env-compact__label">{metric.label}</span>
+                    <span className="env-compact__value">
+                      {metric.value}
+                      {metric.unit && <span className="env-compact__unit">{metric.unit}</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section className="dashboard-card map-card" aria-labelledby="location-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="location-title">Last known location</h2>
+              <p>
+                {latestData?.Latitude && latestData?.Longitude
+                  ? `${latestData.Latitude}, ${latestData.Longitude}`
+                  : "Location data is not available; showing the default area."}
+              </p>
+            </div>
+          </div>
+          <div className="map-card__canvas">
+            <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+              <GoogleMap center={location} zoom={15} mapContainerStyle={{ width: "100%", height: "100%" }}>
+                <Marker position={location} />
+              </GoogleMap>
+            </LoadScript>
+          </div>
+        </section>
+
+        <section className="dashboard-card history-card" aria-labelledby="history-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="history-title">Recent telemetry</h2>
+              <p>{selectedDeviceId ? `Filtered for device ${selectedDeviceId}` : "Latest available device readings"}</p>
+            </div>
+            <div className="history-card__actions">
+              <span className="section-heading__count">{historyRecords.length}</span>
+              <button
+                type="button"
+                className="history-toggle"
+                onClick={() => setShowAllHistory((prev) => !prev)}
+              >
+                {showAllHistory ? "Show fewer" : "View all"}
+              </button>
+            </div>
+          </div>
+          <div className="device-table-wrap">
+            <table className="device-table">
+              <thead>
+                <tr>
+                  <th>Device ID</th>
+                  <th>Latitude</th>
+                  <th>Longitude</th>
+                  <th>Battery</th>
+                  <th>Temperature</th>
+                  <th>Heart rate</th>
+                  <th>Steps</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyRecords.length > 0 ? historyRecords.map((data, index) => (
+                  <tr key={index}>
+                    <td><strong>{data.DeviceID || "N/A"}</strong></td>
+                    <td>{data.Latitude ?? "N/A"}</td>
+                    <td>{data.Longitude ?? "N/A"}</td>
+                    <td>{data.BatteryLevel >= 0 ? `${data.BatteryLevel}%` : "N/A"}</td>
+                    <td>{data.Temperature ?? "N/A"}°C</td>
+                    <td>{data.HeartRate ?? "N/A"} BPM</td>
+                    <td>{data.Steps ?? "N/A"}</td>
+                    <td>{data.Timestamp || "N/A"}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td className="device-table__empty" colSpan="8">No recent device readings are available.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

@@ -1,0 +1,253 @@
+/*
+ * Styles scoped to the Pet Health Tracker card only (embedded in the pet
+ * record page). Mirrors the design tokens used on the homepage (see
+ * home.css). Every class is prefixed "pwh-tracker-" so it cannot collide
+ * with or affect other pages.
+ */
+
+.pwh-tracker-card {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #e5484d;
+  --pwh-danger-dark: #c53030;
+  --pwh-success: #1a9c6b;
+
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  margin: 32px 0;
+  padding: 24px 28px;
+}
+
+.pwh-tracker-card *,
+.pwh-tracker-card *::before,
+.pwh-tracker-card *::after {
+  box-sizing: border-box;
+}
+
+.pwh-tracker-card__header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.pwh-tracker-card__header h2 {
+  color: var(--pwh-ink);
+  font-family: inherit;
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-tracker-badge {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+}
+
+.pwh-tracker-badge--simulator {
+  background: var(--pwh-tint);
+  color: var(--pwh-primary-dark);
+}
+
+.pwh-tracker-badge--physical {
+  background: #e6f6ef;
+  color: var(--pwh-success);
+}
+
+.pwh-tracker-error {
+  background: #fdecec;
+  border-radius: 8px;
+  color: var(--pwh-danger-dark);
+  font-size: 0.875rem;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+}
+
+.pwh-tracker-warning {
+  color: var(--pwh-danger-dark);
+  font-size: 0.8125rem;
+  margin: 10px 0 0;
+}
+
+.pwh-tracker-state {
+  margin-top: 18px;
+}
+
+.pwh-tracker-state__title {
+  color: var(--pwh-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.pwh-tracker-state__hint {
+  color: var(--pwh-muted);
+  font-size: 0.875rem;
+  margin: 0 0 18px;
+}
+
+.pwh-tracker-connect-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pwh-tracker-input {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 6px;
+  color: var(--pwh-ink);
+  flex: 1 1 200px;
+  font-size: 0.9375rem;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.pwh-tracker-input:focus-visible {
+  outline: 2px solid var(--pwh-primary);
+  outline-offset: 1px;
+}
+
+.pwh-tracker-button {
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 10px 18px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.pwh-tracker-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pwh-tracker-button--primary {
+  background: var(--pwh-primary);
+  border-color: var(--pwh-primary);
+  color: #ffffff;
+}
+
+.pwh-tracker-button--primary:not(:disabled):hover {
+  background: var(--pwh-primary-dark);
+  border-color: var(--pwh-primary-dark);
+}
+
+.pwh-tracker-button--secondary {
+  background: var(--pwh-tint);
+  border-color: var(--pwh-border);
+  color: var(--pwh-ink);
+}
+
+.pwh-tracker-button--secondary:not(:disabled):hover {
+  border-color: var(--pwh-primary);
+  color: var(--pwh-primary);
+}
+
+.pwh-tracker-button--ghost {
+  background: transparent;
+  border-color: var(--pwh-border);
+  color: var(--pwh-muted);
+}
+
+.pwh-tracker-button--ghost:not(:disabled):hover {
+  background: var(--pwh-tint);
+}
+
+.pwh-tracker-divider {
+  align-items: center;
+  color: var(--pwh-muted);
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.pwh-tracker-divider::before,
+.pwh-tracker-divider::after {
+  background: var(--pwh-border);
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+.pwh-tracker-facts {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 0;
+}
+
+.pwh-tracker-facts dt {
+  color: var(--pwh-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.pwh-tracker-facts dd {
+  color: var(--pwh-ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pwh-tracker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pwh-tracker-simulator-controls {
+  border-top: 1px solid var(--pwh-border);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.pwh-tracker-simulator-controls__label {
+  color: var(--pwh-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.pwh-tracker-card .sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+@media (max-width: 480px) {
+  .pwh-tracker-card {
+    padding: 20px;
+  }
+
+  .pwh-tracker-connect-row {
+    flex-direction: column;
+  }
+
+  .pwh-tracker-input {
+    width: 100%;
+  }
+}

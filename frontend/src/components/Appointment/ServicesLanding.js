@@ -1,45 +1,59 @@
 import React, { useState } from 'react';
 import AppointmentForm from './AppointmentForm.js';
+import { PawIcon, ClipboardHeartIcon } from '../homeIcons';
 import './ServicesLanding.css';
 
+const SERVICES = [
+  {
+    type: 'grooming',
+    icon: PawIcon,
+    title: 'Grooming Services',
+    items: ['Bath', 'Bath + Haircut', 'Nail Trimming', 'Haircut'],
+  },
+  {
+    type: 'veterinary',
+    icon: ClipboardHeartIcon,
+    title: 'Veterinary Services',
+    items: ['Regular Check-up', 'Vaccination', 'Dental'],
+  },
+];
 
 const ServicesLanding = () => {
   const [serviceType, setServiceType] = useState(null);
 
   return (
-    <div className="services-landing">
-      <h1>Our Premium Pet Services</h1>
-      <p>Choose the care your pet deserves. Grooming and Veterinary appointments made simple, fast, and tailored just for you.</p>
+    <div className="pwh-services-page">
+      <section className="pwh-services-hero">
+        <p className="pwh-services-kicker">Appointments</p>
+        <h1>Book an Appointment</h1>
+        <p>Choose a service and book directly with our grooming and veterinary team.</p>
+      </section>
 
-      <div className="service-cards">
-        <div className="service-card">
-          <span className="badge">Popular</span>
-          <h2>Grooming Services</h2>
-          <ul>
-            <li>Bath</li>
-            <li>Bath + Haircut</li>
-            <li>Nail Trimming</li>
-            <li>Haircut</li>
-          </ul>
-          <button onClick={() => setServiceType('grooming')}>Book Appointment</button>
-        </div>
-
-        <div className="service-card">
-          <span className="badge">Veterinary Expert</span>
-          <h2>Veterinary Services</h2>
-          <ul>
-            <li>Regular Check-up</li>
-            <li>Vaccination</li>
-            <li>Dental</li>
-          </ul>
-          <button onClick={() => setServiceType('veterinary')}>Book Appointment</button>
-        </div>
-
-        
+      <div className="pwh-services-grid">
+        {SERVICES.map(({ type, icon: Icon, title, items }) => (
+          <div className="pwh-services-card" key={type}>
+            <div className="pwh-services-card__icon">
+              <Icon className="pwh-services-icon" />
+            </div>
+            <h2>{title}</h2>
+            <ul>
+              {items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="pwh-services-card__btn"
+              onClick={() => setServiceType(type)}
+            >
+              Book Appointment
+            </button>
+          </div>
+        ))}
       </div>
 
       {serviceType && (
-        <div style={{ marginTop: '3rem', width: '100%' }}>
+        <div className="pwh-services-form-wrap">
           <AppointmentForm
             serviceType={serviceType}
             onClose={() => setServiceType(null)}
