@@ -106,7 +106,11 @@ describe("appointment object-level authorization", () => {
       _id: "appointment-a",
       petOwnerId: "user-a",
       employeeId: "employee-a",
+      employeeFirstName: "Original employee",
+      employeeRole: "Groomer",
       appointmentTime: "10:00",
+      createdAt: "original-created-at",
+      updatedAt: "original-updated-at",
       save: jest.fn().mockResolvedValue(),
       toObject() {
         return {
@@ -126,14 +130,44 @@ describe("appointment object-level authorization", () => {
         status: "Completed",
         petOwnerId: "attacker-controlled-owner",
         employeeId: "attacker-controlled-employee",
+        employeeFirstName: "Attacker-controlled name",
+        employeeRole: "Admin",
+        createdAt: "2000-01-01T00:00:00.000Z",
+        updatedAt: "2000-01-01T00:00:00.000Z",
+        unexpectedField: "attacker-controlled-value",
       });
 
     expect(res.status).toBe(200);
     expect(appointment.petOwnerId).toBe("user-a");
     expect(appointment.employeeId).toBe("employee-a");
+    expect(appointment.employeeFirstName).toBe("Original employee");
+    expect(appointment.employeeRole).toBe("Groomer");
     expect(appointment.appointmentTime).toBe("12:00");
     expect(appointment.status).toBeUndefined();
+    expect(appointment.createdAt).toBe("original-created-at");
+    expect(appointment.updatedAt).toBeInstanceOf(Date);
+    expect(appointment.updatedAt.toISOString()).not.toBe("2000-01-01T00:00:00.000Z");
+    expect(appointment.unexpectedField).toBeUndefined();
     expect(appointment.save).toHaveBeenCalledTimes(1);
+  });
+
+  test("PUT /:id rejects a present but empty appointment date", async () => {
+    asUser({ _id: "user-a", role: "User" });
+    const save = jest.fn();
+    Appointment.findById.mockResolvedValue({
+      _id: "appointment-a",
+      petOwnerId: "user-a",
+      employeeId: "employee-a",
+      appointmentDate: new Date("2030-01-01"),
+      save,
+    });
+
+    const res = await request(app)
+      .put("/api/appointments/appointment-a")
+      .send({ appointmentDate: null });
+
+    expect(res.status).toBe(400);
+    expect(save).not.toHaveBeenCalled();
   });
 
   test("PUT /:id allows the assigned employee to update appointment status", async () => {
