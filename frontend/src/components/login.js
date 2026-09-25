@@ -1,19 +1,22 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import hrApi from "../utils/hrApi";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    
-    console.log("Email:", email, "Password:", password);
-
-    if(email === "admin" && password === "admin"){
-      alert("Login successful!");
-      window.location.href = "/adminDashboard";
+    setError("");
+    try {
+      const { data } = await hrApi.post('/employee/login', { username: email, password });
+      navigate(data.user.role?.toLowerCase() === 'admin' ? '/adminDashboard' : '/employee-dashboard');
+    } catch (loginError) {
+      setError(loginError.response?.data?.error || 'Login failed. Please check your credentials.');
     }
-
   };
 
   return (
@@ -74,6 +77,7 @@ function Login() {
               <div className="row gy-5 justify-content-center">
                 <div className="col-12 col-lg-5">
                   <form onSubmit={handleSubmit}>
+                    {error && <p role="alert" className="text-danger">{error}</p>}
                     <div className="row gy-3">
                       <div className="col-12">
                         <div className="form-floating mb-3">
