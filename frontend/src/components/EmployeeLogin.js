@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import hrApi from "../utils/hrApi";
 import "../styles/EmployeeLogin.css";
 
 function EmployeeLogin() {
@@ -16,22 +16,15 @@ function EmployeeLogin() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8090/employee/login", {
+      const response = await hrApi.post("/employee/login", {
         username,
         password
       });
       
-      // Store employee data in localStorage for later use
-      localStorage.setItem("employeeData", JSON.stringify(response.data.user));
-      
-      // Navigate to employee dashboard
-      navigate("/employee-dashboard");
+      navigate(response.data.user.role?.toLowerCase() === 'admin' ? '/employee' : '/employee-dashboard');
     } catch (error) {
       console.error("Login error:", error);
-      setError(
-        error.response?.data?.error ||
-        "Login failed. Please check your credentials."
-      );
+      setError(error.response?.data?.error || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }

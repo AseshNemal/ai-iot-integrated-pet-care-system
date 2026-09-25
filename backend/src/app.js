@@ -79,7 +79,7 @@ app.post("/logout", (req, res) => {
         }
         req.session.destroy(() => {
             res.clearCookie("connect.sid"); // ✅ Clear session cookie
-            res.redirect(frontendURL); // ✅ Redirect to React home page (production safe)
+            res.json({ message: "Logged out successfully" });
         });
     });
 });

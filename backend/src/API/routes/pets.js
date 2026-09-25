@@ -4,6 +4,17 @@ import axios from "axios";
 import Pet from "../model/pet";
 const { authenticate } = require('../middleware/auth.middlewere');
 
+const editablePetFields = [
+    "petName",
+    "species",
+    "bDate",
+    "gender",
+    "weight",
+    "color",
+    "breed",
+    "deviceId",
+];
+
 // Server-side-only read of the same Realtime Database node the IoT simulator
 // writes to (backend/src/services/iotSimulatorService.js). Reused here rather
 // than adding a parallel config so the tracker endpoint below always points at
@@ -69,9 +80,16 @@ router.route("/").get(authenticate, (req, res) => {
 
 router.route("/update/:id").put(authenticate, async (req, res) => {
     try {
+        const updates = {};
+        editablePetFields.forEach((field) => {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                updates[field] = req.body[field];
+            }
+        });
+
         const pet = await Pet.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            { $set: updates },
             { new: true, runValidators: true }
         );
         

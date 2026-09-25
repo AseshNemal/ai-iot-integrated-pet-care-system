@@ -57,7 +57,12 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 
 ### Notifications & Feedback
 - In-app notifications
-- User feedback submission form
+- Responsive community feedback page at `/feedbackform`, styled with the same
+  navy/indigo design system as the home page
+- Community rating summary, review cards, accessible star selection, character-counted
+  feedback entry, and inline edit/delete controls for the signed-in user's reviews
+- Explicit loading, empty, success, error, and signed-out states, with API requests
+  using the deployable `REACT_APP_API_BASE_URL` configuration
 
 ## Technology Stack
 
@@ -164,6 +169,26 @@ Appointment notifications are created directly by the backend after a successful
 booking. The backend does not make an unauthenticated HTTP request back into its own
 protected notification API.
 
+#### Update API Field Allowlists
+
+Authenticated update handlers use explicit field allowlists rather than passing the
+request body directly to Mongoose. Database query updates are wrapped in `$set` and
+run schema validators. Fields not listed below—including document IDs, ownership
+references, timestamps, and unexpected properties—are ignored.
+
+| Method and path | Editable fields | Protected examples |
+|---|---|---|
+| `PUT /pet/update/:id` | `petName`, `species`, `bDate`, `gender`, `weight`, `color`, `breed`, `deviceId` | `userId`, `_id` |
+| `PUT /medical/:id` | `visitDate`, `visitType`, `veterinarian`, `diagnosis`, `treatment`, `medications`, `notes`, `followUpDate` | `petId`, `_id`, timestamps |
+| `PUT /api/appointments/:id` as the pet owner | `petName`, `serviceCategory`, `appointmentDate`, `appointmentTime` | `status`, owner/staff identity, timestamps |
+| `PUT /api/appointments/:id` as the assigned employee | `appointmentDate`, `appointmentTime`, `status` | pet details, owner/staff identity, timestamps |
+| `PUT /product/update/:id` | `name`, `description`, `price`, `category`, `stock`, `restockLevel`, `restockAmount`, and a server-processed uploaded image | `_id`, timestamps |
+| `PUT /feedback/edit/:id` | `feedback`, `rating` | `userId`, `userName`, `_id`, `createdAt` |
+
+Document-based update routes for expenses, employees, adoption ads, notifications,
+and stock operations also assign named fields individually; they do not merge an
+unfiltered request body into a persisted object.
+
 #### Firebase Setup
 
 1. Register a Web App in the Firebase project.
@@ -185,7 +210,10 @@ npm test -- --runInBand
 The appointment suites cover unauthenticated requests, cross-account reads,
 unauthorized update/delete attempts, ownership-field tampering, role-restricted
 all-appointment access, safe booking staff data, same-day bookings, server-derived
-employee details, and unavailable employee selections.
+employee details, unavailable employee selections, and invalid update dates. The
+mass-assignment suite submits allowed fields alongside attacker-controlled ownership,
+identity, metadata, and unexpected properties to verify that pet, medical-record,
+product, and feedback updates persist only allowlisted fields.
 
 ### IoT Device
 The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a hardware/enclosure drawing, and the Cloudflare Worker script that forwards device readings to the Firebase Realtime Database. Update the worker's Firebase URL and authentication for the selected Firebase project before deploying it. These files are provided for reference and are not part of the npm build.
@@ -205,6 +233,10 @@ The `Pet Health Tracker/` directory contains the micro:bit firmware (`.hex`), a 
   session, checks appointment participation before update/delete operations, prevents
   ownership reassignment through request bodies, and restricts the all-appointments
   endpoint to administrators.
+- The V05 mass-assignment remediation applies explicit per-route update allowlists,
+  `$set` query updates, and update-time schema validation. Appointment updates use
+  participant-specific allowlists so owners cannot change workflow status and assigned
+  employees cannot change pet or ownership data.
 - The authentication middleware supports both Passport-based Google sessions and employee/administrator sessions, preventing intermittent `User not authenticated` responses when navigating after a successful employee login.
 - The Gemini-based AI assistant currently powers the pet training module only; other AI-labeled features (e.g. the chatbot) do not call Gemini.
 - The checkout flow captures payment details in the UI but does not process payments through an external gateway.

@@ -4,6 +4,16 @@ const multer = require('multer')
 const Product = require('../model/Product');
 const { authenticate } = require('../middleware/auth.middlewere');
 
+const editableProductFields = [
+    'name',
+    'description',
+    'price',
+    'category',
+    'stock',
+    'restockLevel',
+    'restockAmount'
+];
+
 // Multer storage setup
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -35,18 +45,14 @@ router.post('/add', authenticate, upload.single("image"), async (req, res) => {
 //Update a product
 router.put('/update/:id', authenticate, upload.single("image"), async (req, res) => {
     try {
-        const { name, description, price, category, stock, restockLevel, restockAmount } = req.body;
         const image = req.file ? req.file.path : undefined;
+        const updateData = {};
 
-        const updateData = {
-            name,
-            description,
-            price,
-            category,
-            stock,
-            restockLevel,
-            restockAmount
-        };
+        editableProductFields.forEach((field) => {
+            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+                updateData[field] = req.body[field];
+            }
+        });
 
         if (image) {
             updateData.image = image;
@@ -54,8 +60,8 @@ router.put('/update/:id', authenticate, upload.single("image"), async (req, res)
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
-            updateData,
-            { new: true }
+            { $set: updateData },
+            { new: true, runValidators: true }
         );
 
         if (!updatedProduct) {

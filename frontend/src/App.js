@@ -38,6 +38,7 @@ import FeedBackForm from './components/FeedBackForm';
 
 import EmployeeLogin from './components/EmployeeLogin';
 import EmployeeDashboard from './components/EmployeeDashboard';
+import HrAdminGuard from './components/HrAdminGuard';
 import Notifications from './components/Notifications';
 
 
@@ -80,8 +81,8 @@ function AppContent() {
           <Route path="/pets/:petId" element={<PetRecord />} />
           <Route path="/pets/:petId/medical" element={<AddMedicalRecord />} />
           <Route path="/adminProducts" element={<AdminDashboard />}/>
-          <Route path="/employee" element={<AddEmployee />} />
-          <Route path="/adminDashboard" element={<Dashboard />} />
+          <Route path="/employee" element={<HrAdminGuard><AddEmployee /></HrAdminGuard>} />
+          <Route path="/adminDashboard" element={<HrAdminGuard><Dashboard /></HrAdminGuard>} />
           <Route path="/adoption-portal" element={<AdoptionPortal />} />
           <Route path="/admin-dashboard" element={<PetAdAdminDashboard />} /> 
           <Route path="/submit-ad" element={<SubmitAd />} />
@@ -93,7 +94,7 @@ function AppContent() {
             </React.Suspense>
           } />
           <Route path="/product/all" element={<StorePage />} />
-          <Route path="/adminDashboard" element={<AdminDashboard />} />
+          <Route path="/adminDashboard" element={<HrAdminGuard><AdminDashboard /></HrAdminGuard>} />
           <Route path="/appointments" element={<ServicesLanding />} />
           <Route path="/appointments/manage" element={<AppointmentList />} />
           <Route path="/adminDashboard/product" element={<AdminDashboard />} />
@@ -105,22 +106,22 @@ function AppContent() {
           <Route path="/employee-login" element={<EmployeeLogin />} />
           <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
 
-          <Route path="/financial" element={<FinancialManagement />} />
+          <Route path="/financial" element={<HrAdminGuard><FinancialManagement /></HrAdminGuard>} />
           <Route path="/financial/expenses" element={
-            <>
+            <HrAdminGuard>
             <FinancialManagement />
             <ExpensesManagement />
-            </> } />
+            </HrAdminGuard> } />
             <Route path="/financial/orders" element={
             <>
             <FinancialManagement />
             <OrderFinanceManagement />
             </> } />
             <Route path="/financial/hr" element={
-            <>
+            <HrAdminGuard>
             <FinancialManagement />
             <HRFinanceManagement />
-            </> } />
+            </HrAdminGuard> } />
         </Routes>
       </Suspense>
 

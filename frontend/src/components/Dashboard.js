@@ -1,34 +1,32 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import axios from "axios"
+import { Link, useNavigate } from "react-router-dom"
+import hrApi from "../utils/hrApi"
 import { Bar } from "react-chartjs-2"
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 function Dashboard() {
+  const navigate = useNavigate()
   const [receivedData, setReceivedData] = useState([])
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0)
   const [loading, setLoading] = useState(false)
-
-  const handleAdminLogout = async (event) => {
-    event.preventDefault()
-
-    try {
-      await axios.post("http://localhost:8090/employee/logout")
-    } catch (error) {
-      console.error("Admin logout error:", error)
-    } finally {
-      localStorage.removeItem("employeeData")
-      window.location.href = "/login"
-    }
-  }
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [sortField, setSortField] = useState("appointmentCount")
   const [sortOrder, setSortOrder] = useState("desc")
   const [filterRole, setFilterRole] = useState("")
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await hrApi.post('/employee/logout')
+      navigate('/employee-login')
+    } catch (logoutError) {
+      console.error('HR logout failed:', logoutError)
+      setError('Logout failed. Please try again.')
+    }
+  }
 
   useEffect(() => {
     fetchReceivedData()
@@ -41,7 +39,7 @@ function Dashboard() {
     try {
       setLoading(true)
       console.log("Fetching appointment data")
-      const response = await axios.get("http://localhost:8090/api/appointments/all", {
+      const response = await hrApi.get("/api/appointments/all", {
         timeout: 5000,
       })
       console.log("Fetched appointment data:", response.data)
@@ -78,7 +76,7 @@ function Dashboard() {
 
   async function fetchEmployeeCount() {
     try {
-      const response = await axios.get("http://localhost:8090/employee/count", {
+      const response = await hrApi.get("/employee/count", {
         timeout: 5000,
       })
       console.log("Fetched employee count:", response.data)
@@ -197,6 +195,9 @@ function Dashboard() {
         .logout-link {
           color: #ffffff;
           text-decoration: none;
+          background: none;
+          border: 0;
+          cursor: pointer;
           display: flex;
           align-items: center;
           gap: 5px;
@@ -713,9 +714,9 @@ function Dashboard() {
         <div className="navbar-brand">Pet Care Admin</div>
         <div className="navbar-user">
           <span>Admin User</span>
-          <a href="/login" className="logout-link" onClick={handleAdminLogout}>
+          <button type="button" className="logout-link" onClick={handleLogout}>
             <i className="fas fa-sign-out-alt"></i> Logout
-          </a>
+          </button>
         </div>
       </div>
       <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>

@@ -27,7 +27,7 @@ const googleAuth = (passport) => {
             googleId: profile.id,
             displayName: profile.displayName,
             gmail: profile.emails[0].value,
-            image: profile.photos?.[0]?.value,
+            image: profile.photos?.[0]?.value?.replace(/=s\d+-c$/, "=s200-c"),
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
           };
@@ -36,6 +36,9 @@ const googleAuth = (passport) => {
 
           if (!user) {
             user = await User.create(userObj);
+          } else {
+            Object.assign(user, userObj);
+            await user.save();
           }
 
           return done(null, user);

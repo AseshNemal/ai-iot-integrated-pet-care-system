@@ -1,36 +1,28 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import hrApi from "../utils/hrApi";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setLoading(true);
-
     try {
-      const response = await axios.post("http://localhost:8090/employee/login", {
-        username: email,
-        password
-      });
-
-      if (response.data.user?.role?.toLowerCase() !== "admin") {
-        await axios.post("http://localhost:8090/employee/logout");
-        setError("This account does not have administrator access.");
+      const { data } = await hrApi.post('/employee/login', { username: email, password });
+      if (data.user?.role?.toLowerCase() !== 'admin') {
+        await hrApi.post('/employee/logout');
+        setError('This account does not have administrator access.');
         return;
       }
-
-      localStorage.setItem("employeeData", JSON.stringify(response.data.user));
-      window.location.href = "/adminDashboard";
+      navigate('/adminDashboard');
     } catch (loginError) {
-      setError(
-        loginError.response?.data?.error ||
-        "Login failed. Please check your credentials."
-      );
+      setError(loginError.response?.data?.error || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -94,12 +86,8 @@ function Login() {
               <div className="row gy-5 justify-content-center">
                 <div className="col-12 col-lg-5">
                   <form onSubmit={handleSubmit}>
+                    {error && <p role="alert" className="text-danger">{error}</p>}
                     <div className="row gy-3">
-                      {error && (
-                        <div className="col-12">
-                          <div className="alert alert-danger" role="alert">{error}</div>
-                        </div>
-                      )}
                       <div className="col-12">
                         <div className="form-floating mb-3">
                           <input
