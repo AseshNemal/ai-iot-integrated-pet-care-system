@@ -251,11 +251,9 @@ function FeedbackPage() {
             <span className="pwh-feedback-compose__icon" aria-hidden="true">
               <SparkleIcon />
             </span>
-            <div>
-              <p className="pwh-feedback-kicker">Share your experience</p>
-              <h2>Your voice helps shape the hub.</h2>
-            </div>
+            <p className="pwh-feedback-kicker">Share your experience</p>
           </div>
+          <h2>Your voice helps shape the hub.</h2>
           <p className="pwh-feedback-compose__intro">
             A few thoughtful words help us improve—and help other pet parents know what to expect.
           </p>

@@ -179,9 +179,13 @@
 }
 
 .pwh-feedback-compose__heading {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
-  gap: 14px;
+  gap: 12px;
+}
+
+.pwh-feedback-compose__heading .pwh-feedback-kicker {
+  margin-bottom: 0;
 }
 
 .pwh-feedback-compose__icon {
@@ -209,11 +213,15 @@
   margin-bottom: 0;
 }
 
+.pwh-feedback-compose > h2 {
+  margin-top: 18px;
+}
+
 .pwh-feedback-compose__intro {
   color: var(--pwh-muted);
   font-size: 0.9375rem;
   line-height: 1.6;
-  margin: 20px 0 26px;
+  margin: 10px 0 32px;
 }
 
 .pwh-feedback-signin {
@@ -279,6 +287,11 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pwh-feedback-field__label-row label {
+  margin-bottom: 0;
 }
 
 .pwh-feedback-field__label-row span {
