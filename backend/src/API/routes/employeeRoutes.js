@@ -67,6 +67,21 @@ router.get('/service-providers', async (req, res) => {
     }
 });
 
+// Public booking catalogue. Exposes only the fields customers need to select
+// a service provider; the full employee records remain authenticated.
+router.get('/booking-options', async (req, res) => {
+    try {
+        const employees = await Employee.find({
+            role: { $in: ['Groomer', 'Vet'] }
+        }).select('_id firstName lastName role');
+
+        res.status(200).json(employees);
+    } catch (error) {
+        console.error('Error fetching booking options:', error);
+        res.status(500).json({ error: 'Failed to fetch booking options.' });
+    }
+});
+
 router.use(requireEmployee, requireHrAdmin);
 router.use((req, res, next) => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireTrustedOrigin(req, res, next);

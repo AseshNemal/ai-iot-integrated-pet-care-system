@@ -1,150 +1,138 @@
-/* AppointmentForm.css */
+/*
+ * Styles scoped to the appointment booking form only (AppointmentForm.js).
+ * Mirrors the design tokens used on the homepage (see home.css). Every class
+ * is prefixed "pwh-booking-" so it cannot collide with or affect other
+ * pages, including the appointment management page's own "pwh-appt-" prefix.
+ */
 
-.appointment-form {
-  background-color: #ffffff;
-  padding: 2rem;
+.pwh-booking-form {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #c53030;
+  --pwh-success: #1a9c6b;
+
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  font-family: 'Segoe UI', sans-serif;
-  color: #1a1a1a;
-  animation: fadeInUp 0.5s ease both;
-  transform-origin: top center;
-  max-width: 600px;
-  margin: auto;
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  padding: 28px;
 }
 
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.pwh-booking-form *,
+.pwh-booking-form *::before,
+.pwh-booking-form *::after {
+  box-sizing: border-box;
 }
 
-.appointment-form h3 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #001b44;
-  margin-bottom: 1.5rem;
-  text-transform: capitalize;
+.pwh-booking-form h3 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 20px;
   text-align: center;
+  text-transform: capitalize;
 }
 
-.appointment-form .form-group {
-  margin-bottom: 1.25rem;
+.pwh-booking-form__group {
+  margin-bottom: 18px;
 }
 
-.appointment-form label {
+.pwh-booking-form label {
+  color: var(--pwh-ink);
   display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #003087;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.appointment-form input,
-.appointment-form select {
-  width: 100%;
-  padding: 0.75rem;
+.pwh-booking-form input,
+.pwh-booking-form select {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  color: var(--pwh-ink);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  padding: 11px 12px;
+  width: 100%;
 }
 
-.appointment-form input:focus,
-.appointment-form select:focus {
-  border-color: #0075c9;
-  box-shadow: 0 0 0 2px rgba(0, 117, 201, 0.2);
+.pwh-booking-form input:focus,
+.pwh-booking-form select:focus {
+  border-color: var(--pwh-primary);
+  box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.15);
   outline: none;
 }
 
-/* 🔥 Custom Time Slot Styling 🔥 */
-.appointment-form select[name="time"] {
-  width: 250px;
-  max-width: 100%;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  background-color: #ffffff;
-  background-image: url('data:image/svg+xml;utf8,<svg fill="%230075c9" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1.2rem;
-  appearance: none;
-}
-
-.appointment-form select[name="time"]:hover {
-  border-color: #0075c9;
-}
-
-.appointment-form select[name="time"]:disabled {
-  background-color: #f1f5f9;
-  color: #94a3b8;
+.pwh-booking-form select:disabled {
+  background: var(--pwh-tint);
+  color: var(--pwh-muted);
   cursor: not-allowed;
 }
 
-/* ✅ Success and Error Messages */
-.appointment-form .success-message {
-  color: green;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.appointment-form .error-message {
-  color: red;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
+.pwh-booking-form__success {
+  color: var(--pwh-success);
+  font-size: 0.9375rem;
+  margin: 0 0 16px;
   text-align: center;
 }
 
-.appointment-form .form-buttons {
+.pwh-booking-form__error {
+  color: var(--pwh-danger);
+  font-size: 0.9375rem;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.pwh-booking-form__actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 12px;
+  margin-top: 8px;
 }
 
-.appointment-form .submit-btn,
-.appointment-form .cancel-btn {
-  flex: 1;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border-radius: 30px;
-  border: none;
+.pwh-booking-form__submit,
+.pwh-booking-form__cancel {
+  border-radius: 8px;
+  border: 1.5px solid transparent;
   cursor: pointer;
-  transition: all 0.3s ease;
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 12px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.appointment-form .submit-btn {
-  background-color: #0075c9;
-  color: #fff;
-  font-weight: 600;
+.pwh-booking-form__submit {
+  background: var(--pwh-primary);
+  color: #ffffff;
 }
 
-.appointment-form .submit-btn:hover {
-  background-color: #004a99;
+.pwh-booking-form__submit:hover {
+  background: var(--pwh-primary-dark);
 }
 
-.appointment-form .cancel-btn {
-  background-color: #f1f5f9;
-  color: #0075c9;
-  border: 1px solid #0075c9;
-  font-weight: 600;
+.pwh-booking-form__cancel {
+  background: var(--pwh-bg);
+  border-color: var(--pwh-border);
+  color: var(--pwh-ink);
 }
 
-.appointment-form .cancel-btn:hover {
-  background-color: #e2e8f0;
-  color: #004a99;
+.pwh-booking-form__cancel:hover {
+  border-color: var(--pwh-muted);
+}
+
+@media (max-width: 480px) {
+  .pwh-booking-form {
+    padding: 20px;
+  }
+
+  .pwh-booking-form__actions {
+    flex-direction: column;
+  }
 }

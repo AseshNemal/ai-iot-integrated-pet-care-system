@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import './AppointmentForm.css';
 
 const AppointmentForm = ({ serviceType, onClose }) => {
@@ -19,8 +20,18 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   const [employees, setEmployees] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
 
+  const toLocalDateInputValue = (date) => [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+
+  const today = new Date();
+  const maxAppointmentDate = new Date(today);
+  maxAppointmentDate.setMonth(today.getMonth() + 60);
+
   useEffect(() => {
-    fetch("http://localhost:8090/get-session", { credentials: "include" })
+    fetch(`${API_BASE_URL}/get-session`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.user?._id) {
@@ -33,10 +44,12 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get("http://localhost:8090/employee/service-providers");
+        const response = await axios.get(`${API_BASE_URL}/employee/booking-options`);
         setEmployees(response.data);
+        setError('');
       } catch (err) {
         console.error("Failed to fetch employees:", err);
+        setError(err.response?.data?.error || 'Unable to load available staff. Please try again.');
       }
     };
     fetchEmployees();
@@ -84,7 +97,7 @@ const AppointmentForm = ({ serviceType, onClose }) => {
 
     if (updatedForm.employeeId && updatedForm.category && updatedForm.date) {
       try {
-        const response = await axios.get('http://localhost:8090/api/appointments/available-slots', {
+        const response = await axios.get(`${API_BASE_URL}/api/appointments/available-slots`, {
           params: {
             employeeId: updatedForm.employeeId,
             date: updatedForm.date,
@@ -115,13 +128,10 @@ const AppointmentForm = ({ serviceType, onClose }) => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8090/api/appointments",
+      await axios.post(
+        `${API_BASE_URL}/api/appointments`,
         {
-          userId,
           employeeId: form.employeeId,
-          employeeFirstName: form.employeeFirstName,
-          employeeRole: form.employeeRole,
           petName: form.petName,
           serviceCategory: form.category,
           appointmentDate: form.date,
@@ -146,10 +156,10 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   };
 
   return (
-    <form className="appointment-form" onSubmit={handleSubmit}>
+    <form className="pwh-booking-form" onSubmit={handleSubmit}>
       <h3>{serviceType} Appointment</h3>
 
-      <div className="form-group">
+      <div className="pwh-booking-form__group">
         <label>Pet Name</label>
         <input
           type="text"
@@ -160,7 +170,7 @@ const AppointmentForm = ({ serviceType, onClose }) => {
         />
       </div>
 
-      <div className="form-group">
+      <div className="pwh-booking-form__group">
         <label>{serviceType === 'grooming' ? 'Groomer' : 'Doctor'} Name</label>
         <select
           name="employeeId"
@@ -177,7 +187,7 @@ const AppointmentForm = ({ serviceType, onClose }) => {
         </select>
       </div>
 
-      <div className="form-group">
+      <div className="pwh-booking-form__group">
         <label>Service Category</label>
         <select
           name="category"
@@ -194,7 +204,7 @@ const AppointmentForm = ({ serviceType, onClose }) => {
         </select>
       </div>
 
-      <div className="form-group">
+      <div className="pwh-booking-form__group">
         <label>Date</label>
         <input
           type="date"
@@ -202,12 +212,12 @@ const AppointmentForm = ({ serviceType, onClose }) => {
           value={form.date}
           onChange={handleChange}
           required
-          min={new Date().toISOString().split('T')[0]}
-          max={new Date(new Date().setMonth(new Date().getMonth() + 60)).toISOString().split('T')[0]}
+          min={toLocalDateInputValue(today)}
+          max={toLocalDateInputValue(maxAppointmentDate)}
         />
       </div>
 
-      <div className="form-group">
+      <div className="pwh-booking-form__group">
         <label>Time Slot</label>
         <select
           name="time"
@@ -223,14 +233,14 @@ const AppointmentForm = ({ serviceType, onClose }) => {
         </select>
       </div>
 
-      {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
+      {error && <p className="pwh-booking-form__error">{error}</p>}
+      {success && <p className="pwh-booking-form__success">{success}</p>}
 
-      <div className="form-buttons">
-        <button type="submit" className="submit-btn">
+      <div className="pwh-booking-form__actions">
+        <button type="submit" className="pwh-booking-form__submit">
           Confirm
         </button>
-        <button type="button" className="cancel-btn" onClick={onClose}>
+        <button type="button" className="pwh-booking-form__cancel" onClick={onClose}>
           Cancel
         </button>
       </div>
