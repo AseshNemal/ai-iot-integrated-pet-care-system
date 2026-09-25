@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import "./Header.css";
 
 function Header() {
   const [user, setUser] = useState(null);
@@ -107,7 +108,7 @@ function Header() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light">
+    <nav className="site-header navbar navbar-expand-lg navbar-light bg-light">
       <button
         className="navbar-toggler"
         type="button"
@@ -119,7 +120,7 @@ function Header() {
       >
         <span className="navbar-toggler-icon"></span>
       </button>
-      <Link to="/" className="navbar-brand">PetWellness</Link>
+      <Link to="/" className="navbar-brand">Pet Wellness Hub</Link>
 
       <div className="collapse navbar-collapse" id="navbarTogglerDemo03">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
@@ -127,19 +128,16 @@ function Header() {
             <Link to="/" className="nav-link">Home <span className="sr-only"></span></Link>
           </li>
           <li className="nav-item">
-            <Link to="/product/all" className="nav-link">Shopping</Link>
+            <Link to="/pet" className="nav-link">My pets</Link>
           </li>
           <li className="nav-item">
-            <Link to="/appointments" className="nav-link">Services</Link>
+            <Link to="/appointments" className="nav-link">Appointments</Link>
           </li>
           <li className="nav-item">
-            <Link to="/adoption-portal" className="nav-link">Adoption Portal</Link>
+            <Link to="/adoption-portal" className="nav-link">Adoption</Link>
           </li>
           <li className="nav-item">
-            <Link to="/pet" className="nav-link">Pet</Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/pet" className="nav-link">Medical History</Link>
+            <Link to="/product/all" className="nav-link">Shop</Link>
           </li>
           <li className="nav-item">
             <Link to="/AboutUs" className="nav-link">About us</Link>

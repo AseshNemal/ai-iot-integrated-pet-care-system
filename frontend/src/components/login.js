@@ -6,16 +6,25 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setLoading(true);
     try {
       const { data } = await hrApi.post('/employee/login', { username: email, password });
-      navigate(data.user.role?.toLowerCase() === 'admin' ? '/adminDashboard' : '/employee-dashboard');
+      if (data.user?.role?.toLowerCase() !== 'admin') {
+        await hrApi.post('/employee/logout');
+        setError('This account does not have administrator access.');
+        return;
+      }
+      navigate('/adminDashboard');
     } catch (loginError) {
       setError(loginError.response?.data?.error || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -139,8 +148,8 @@ function Login() {
                       </div>
                       <div className="col-12">
                         <div className="d-grid">
-                          <button className="btn btn-dark" type="submit">
-                            Log in
+                          <button className="btn btn-dark" type="submit" disabled={loading}>
+                            {loading ? "Logging in..." : "Log in"}
                           </button>
                         </div>
                       </div>
