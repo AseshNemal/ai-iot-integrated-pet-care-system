@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { randomUUID } = require('crypto');
+const { randomUUID } = require('node:crypto');
 const Employee = require('../src/API/model/Employee');
 
 async function main() {

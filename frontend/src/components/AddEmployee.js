@@ -24,6 +24,7 @@ function AddEmployee() {
             await hrApi.post('/employee/logout');
             navigate('/employee-login');
         } catch (logoutError) {
+            console.error('HR logout failed:', logoutError);
             setError('Logout failed. Please try again.');
         }
     };
