@@ -57,7 +57,12 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 
 ### Notifications & Feedback
 - In-app notifications
-- User feedback submission form
+- Responsive community feedback page at `/feedbackform`, styled with the same
+  navy/indigo design system as the home page
+- Community rating summary, review cards, accessible star selection, character-counted
+  feedback entry, and inline edit/delete controls for the signed-in user's reviews
+- Explicit loading, empty, success, error, and signed-out states, with API requests
+  using the deployable `REACT_APP_API_BASE_URL` configuration
 
 ## Technology Stack
 
