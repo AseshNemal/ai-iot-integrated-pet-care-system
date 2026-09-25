@@ -30,9 +30,22 @@ This repository is a redevelopment and continuation of an earlier project, **Onl
 - Admin review dashboard for adoption ads
 
 ### Store, Orders & Payments
-- Pet store with product catalog and admin product management
-- Order placement and order history ("My Orders")
+- Responsive pet store at `/product/all` with product search, category filters,
+  price/name sorting, stock indicators, product-detail dialogs, and a slide-in cart
+- Explicit loading, API-error, empty-result, out-of-stock, and missing-image states
+  across the catalog; product browsing remains public
+- Authenticated order placement and responsive order history at `/my-orders`, with
+  newest/oldest sorting, per-order line items, order totals, and aggregate purchase
+  statistics
+- Order history distinguishes loading, signed-out, empty, and API-error states and
+  sends the server-side session cookie when requesting protected order data
 - Checkout page with client-side card-detail form and validation
+- Store and order-history pages share the home page's navy/indigo visual system,
+  responsive layout conventions, keyboard focus styles, and reduced-motion support
+
+The frontend reads the backend origin from `REACT_APP_API_BASE_URL` through
+`frontend/src/config/api.js` (default: `http://localhost:8090`). See
+[`frontend/README.md`](frontend/README.md) for route, state, and maintenance details.
 
   > Note: the payment page currently validates and captures card details in the browser only; no third-party payment gateway (e.g. Stripe/PayPal) is integrated yet.
 
