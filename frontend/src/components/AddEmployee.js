@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import hrApi from "../utils/hrApi";
 
 function AddEmployee() {
+    const navigate = useNavigate();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [username, setUsername] = useState("");
@@ -18,6 +19,15 @@ function AddEmployee() {
     const [editingEmployee, setEditingEmployee] = useState(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+    const handleLogout = async () => {
+        try {
+            await hrApi.post('/employee/logout');
+            navigate('/employee-login');
+        } catch (logoutError) {
+            setError('Logout failed. Please try again.');
+        }
+    };
+
     useEffect(() => {
         fetchEmployees();
     }, []);
@@ -26,10 +36,9 @@ function AddEmployee() {
         try {
             setLoading(true);
             setError(""); // Clear previous errors
-            const response = await axios.get("http://localhost:8090/employee/get", {
+            const response = await hrApi.get("/employee/get", {
                 timeout: 5000 // Add timeout to prevent hanging
             });
-            console.log("Fetched employees:", response.data); // Debug log
             setEmployees(response.data.employees || []);
             setTotalCount(response.data.totalCount || 0);
         } catch (error) {
@@ -46,7 +55,7 @@ function AddEmployee() {
         setSuccess("");
         setLoading(true);
 
-        if (!firstName || !lastName || !username || !email || !password || !role) {
+        if (!firstName || !lastName || !username || !email || (!editingEmployee && !password) || !role) {
             setError("All fields are required.");
             setLoading(false);
             return;
@@ -64,20 +73,18 @@ function AddEmployee() {
             lastName,
             username,
             email,
-            password,
+            ...(password ? { password } : {}),
             role,
         };
 
         try {
             if (editingEmployee) {
-                const response = await axios.put(`http://localhost:8090/employee/${editingEmployee._id}`, employeeData);
-                console.log("Updated employee:", response.data); // Debug log
+                const response = await hrApi.put(`/employee/${editingEmployee._id}`, employeeData);
                 setEmployees(employees.map(emp => emp._id === editingEmployee._id ? response.data.employee : emp));
                 setTotalCount(response.data.totalCount);
                 setSuccess("Employee updated successfully!");
             } else {
-                const response = await axios.post("http://localhost:8090/employee/create", employeeData);
-                console.log("Created employee:", response.data); // Debug log
+                const response = await hrApi.post("/employee/create", employeeData);
                 setEmployees([...employees, response.data.employee]);
                 setTotalCount(response.data.totalCount);
                 setSuccess("Employee added successfully!");
@@ -101,7 +108,7 @@ function AddEmployee() {
         if (window.confirm("Are you sure you want to delete this employee?")) {
             try {
                 setActionLoading((prev) => ({ ...prev, [id]: "delete" }));
-                const response = await axios.delete(`http://localhost:8090/employee/${id}`);
+                const response = await hrApi.delete(`/employee/${id}`);
                 console.log("Deleted employee:", response.data); // Debug log
                 setEmployees(employees.filter((emp) => emp._id !== id));
                 setTotalCount(response.data.totalCount);
@@ -121,7 +128,7 @@ function AddEmployee() {
         setLastName(employee.lastName);
         setUsername(employee.username);
         setEmail(employee.email);
-        setPassword(employee.password);
+        setPassword("");
         setRole(employee.role);
     }
 
@@ -141,9 +148,9 @@ function AddEmployee() {
                 <div className="navbar-brand">Pet Care Admin</div>
                 <div className="navbar-user">
                     <span>Admin User</span>
-                    <Link to="/" className="logout-link">
+                    <button type="button" className="logout-link" onClick={handleLogout}>
                         <i className="fas fa-sign-out-alt"></i> Logout
-                    </Link>
+                    </button>
                 </div>
             </div>
             <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
@@ -268,7 +275,7 @@ function AddEmployee() {
                                         className="form-control"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        required
+                                        required={!editingEmployee}
                                     />
                                 </div>
                             </div>
@@ -285,6 +292,7 @@ function AddEmployee() {
                                         <option value="">Select Role</option>
                                         <option value="Vet">Vet</option>
                                         <option value="Groomer">Groomer</option>
+                                        <option value="Admin">Admin</option>
                                     </select>
                                 </div>
                             </div>
@@ -384,7 +392,7 @@ function AddEmployee() {
                     .navbar-brand { font-size: 20px; font-weight: 600; }
                     .navbar-user { display: flex; align-items: center; gap: 15px; }
                     .navbar-user span { font-size: 14px; }
-                    .logout-link { color: #ffffff; text-decoration: none; }
+                    .logout-link { color: #ffffff; text-decoration: none; background: none; border: 0; cursor: pointer; }
                     .logout-link:hover { color: #007bff; }
                     .sidebar {
                         width: 240px;

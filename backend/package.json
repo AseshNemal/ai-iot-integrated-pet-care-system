@@ -12,6 +12,11 @@
     "start": "babel-node src/app.js",
     "test": "jest"
   },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.test.js"
+    ]
+  },
   "devDependencies": {
     "@babel/core": "^7.26.7",
     "@babel/node": "^7.26.0",

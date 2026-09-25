@@ -4,8 +4,25 @@ import Appointment from "../model/Appointment.js";
 import Employee from "../model/Employee.js";
 import Notification from "../model/Notification.js";
 import { authenticate, authorizeRoles } from "../middleware/auth.middlewere.js";
+const { requireEmployee, requireHrAdmin } = require('../middleware/employeeAuth');
 
 const router = express.Router();
+
+// The HR report is shared by the employee Admin dashboard and the application's
+// Passport Admin flow. Accept either verified server-side identity.
+const requireAppointmentAdmin = (req, res, next) => {
+  if (req.session?.employeeId) {
+    return requireEmployee(req, res, (employeeError) => {
+      if (employeeError) return next(employeeError);
+      return requireHrAdmin(req, res, next);
+    });
+  }
+
+  return authenticate(req, res, (authError) => {
+    if (authError) return next(authError);
+    return authorizeRoles("Admin")(req, res, next);
+  });
+};
 
 const ownerEditableFields = [
   "petName",
@@ -259,8 +276,8 @@ router.get("/available-slots", async (req, res) => {
   }
 });
 
-// 📌 Get all appointments for authorized administrators
-router.get("/all", authenticate, authorizeRoles("Admin"), async (req, res) => {
+// Appointment listing for verified HR or application administrators.
+router.get("/all", requireAppointmentAdmin, async (req, res) => {
   try {
     const appointments = await Appointment.find({}).sort({ appointmentDate: 1 });
     res.json(appointments);

@@ -1,10 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Expense = require('../model/Expense');
-const { authenticate } = require('../middleware/auth.middlewere');
+const { requireEmployee, requireHrAdmin, requireTrustedOrigin } = require('../middleware/employeeAuth');
+
+router.use(requireEmployee, requireHrAdmin);
+router.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return requireTrustedOrigin(req, res, next);
+  next();
+});
 
 // Get all expenses
-router.get('/', authenticate, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const expenses = await Expense.find().sort({ createdAt: -1 });
     res.json(expenses);
@@ -14,7 +20,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Create a new expense
-router.post('/', authenticate, async (req, res) => {
+router.post('/', async (req, res) => {
   const expense = new Expense({
     itemName: req.body.itemName,
     quantity: req.body.quantity,
@@ -31,7 +37,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Update an expense
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
@@ -51,7 +57,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Delete an expense
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const expense = await Expense.findById(req.params.id);
     if (!expense) {
