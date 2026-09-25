@@ -71,6 +71,7 @@ app.get("/get-session", (req, res) => {
     }
 });
 
+//Fix (V11 : Use POST instead of GET to prevent Logout CSRF attacks)
 app.post("/logout", (req, res) => {
     req.logout((err) => {
         if (err) {
