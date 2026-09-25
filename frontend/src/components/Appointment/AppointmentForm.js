@@ -33,7 +33,7 @@ const AppointmentForm = ({ serviceType, onClose }) => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get("http://localhost:8090/employee/");
+        const response = await axios.get("http://localhost:8090/employee/service-providers");
         setEmployees(response.data);
       } catch (err) {
         console.error("Failed to fetch employees:", err);
