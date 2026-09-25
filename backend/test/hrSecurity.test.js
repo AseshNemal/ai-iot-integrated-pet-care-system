@@ -5,6 +5,11 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const Employee = require('../src/API/model/Employee');
 const Expense = require('../src/API/model/Expense');
+require('@babel/register')({
+  presets: [require.resolve('@babel/preset-env')],
+  only: [/backend[\\/]src[\\/]/]
+});
+const Appointment = require('../src/API/model/Appointment').default;
 
 test('new employee passwords are hashed by the model before save', async () => {
   const employee = new Employee({
@@ -33,18 +38,28 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
     findOne: Employee.findOne,
     findById: Employee.findById,
     find: Employee.find,
-    expenseFind: Expense.find
+    expenseFind: Expense.find,
+    appointmentFind: Appointment.find
   };
   Employee.findOne = ({ username }) => ({ select: async () => admins[username] || null });
   Employee.findById = async (id) => Object.values(admins).find((employee) => employee.id === id) || null;
-  Employee.find = () => ({ select: async () => [{ _id: 'admin-id', username: 'admin', role: 'Admin' }] });
+  Employee.find = (filter) => ({ select: async (fields) => {
+    if (filter?.role) {
+      assert.deepEqual(filter.role.$in, ['Vet', 'Groomer']);
+      assert.equal(fields, '_id firstName lastName role');
+      return [{ _id: 'staff-id', firstName: 'Test', lastName: 'Vet', role: 'Vet' }];
+    }
+    return [{ _id: 'admin-id', username: 'admin', role: 'Admin' }];
+  } });
   Expense.find = () => ({ sort: async () => [{ itemName: 'Test', totalCost: 10 }] });
+  Appointment.find = () => ({ sort: async () => [{ employeeId: 'staff-id', petName: 'Test pet' }] });
 
   const app = express();
   app.use(express.json());
   app.use(session({ secret: 'test-session-secret-with-sufficient-length', resave: false, saveUninitialized: false }));
   app.use('/employee', require('../src/API/routes/employeeRoutes'));
   app.use('/api/expenses', require('../src/API/routes/expenseRoutes'));
+  app.use('/api/appointments', require('../src/API/routes/appointmentRoutes').default);
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -55,7 +70,11 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
   });
   try {
     assert.equal((await request('/employee/get')).status, 401);
+    const providers = await request('/employee/service-providers');
+    assert.equal(providers.status, 200);
+    assert.deepEqual(await providers.json(), [{ _id: 'staff-id', firstName: 'Test', lastName: 'Vet', role: 'Vet' }]);
     assert.equal((await request('/api/expenses')).status, 401);
+    assert.equal((await request('/api/appointments/all')).status, 401);
 
     const unknown = await login('missing', 'bad-password');
     const wrong = await login('admin', 'bad-password');
@@ -67,6 +86,7 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
     const staffCookie = staffLogin.headers.get('set-cookie').split(';')[0];
     assert.equal((await request('/employee/me', { headers: { Cookie: staffCookie } })).status, 200);
     assert.equal((await request('/employee/get', { headers: { Cookie: staffCookie } })).status, 403);
+    assert.equal((await request('/api/appointments/all', { headers: { Cookie: staffCookie } })).status, 403);
 
     const adminLogin = await login('admin', 'correct-password');
     assert.equal(adminLogin.status, 200);
@@ -77,6 +97,7 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
     assert.equal(listing.status, 200);
     assert.equal(Object.hasOwn((await listing.json()).employees[0], 'password'), false);
     assert.equal((await request('/api/expenses', { headers: { Cookie: adminCookie } })).status, 200);
+    assert.equal((await request('/api/appointments/all', { headers: { Cookie: adminCookie } })).status, 200);
     assert.equal((await request('/employee/create', {
       method: 'POST', headers: { Cookie: adminCookie, Origin: 'https://untrusted.example' }
     })).status, 403);
@@ -100,5 +121,6 @@ test('HR sessions enforce role, hide passwords, check origins, and limit login a
     Employee.findById = originals.findById;
     Employee.find = originals.find;
     Expense.find = originals.expenseFind;
+    Appointment.find = originals.appointmentFind;
   }
 });
