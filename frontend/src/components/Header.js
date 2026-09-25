@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 import "./Header.css";
 
 function Header() {
@@ -26,7 +27,7 @@ function Header() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch("http://localhost:8090/get-session", { 
+        const response = await fetch(`${API_BASE_URL}/get-session`, {
           credentials: "include" 
         });
         if (!response.ok) throw new Error('Session fetch failed');
@@ -64,7 +65,7 @@ function Header() {
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
-      await fetch("http://localhost:8090/logout", {
+      await fetch(`${API_BASE_URL}/logout`, {
         method: "POST",
         credentials: "include",
       });
@@ -223,6 +224,7 @@ function Header() {
                         className="rounded-circle mr-2"
                         width="32"
                         height="32"
+                        referrerPolicy="no-referrer"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/default-profile.png';
