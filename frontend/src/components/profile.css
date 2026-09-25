@@ -1,0 +1,248 @@
+/*
+ * Styles scoped to the Profile page only. Mirrors the design tokens used on
+ * the homepage (see home.css). Every class is prefixed "pwh-profile-" so it
+ * cannot collide with or affect other pages.
+ */
+
+.pwh-profile-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #e5484d;
+  --pwh-danger-dark: #c53030;
+
+  background: var(--pwh-bg);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  min-height: 60vh;
+}
+
+.pwh-profile-page *,
+.pwh-profile-page *::before,
+.pwh-profile-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-profile-page h1,
+.pwh-profile-page h2,
+.pwh-profile-page h3 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-profile-page button {
+  font-family: inherit;
+}
+
+.pwh-profile-card {
+  margin: 56px auto;
+  max-width: 640px;
+  padding: 0 32px;
+}
+
+.pwh-profile-header {
+  border-bottom: 1px solid var(--pwh-border);
+  padding-bottom: 32px;
+  text-align: center;
+}
+
+.pwh-profile-avatar {
+  background: var(--pwh-tint);
+  border: 4px solid var(--pwh-tint);
+  border-radius: 50%;
+  height: 120px;
+  margin: 0 auto 20px;
+  object-fit: cover;
+  width: 120px;
+}
+
+.pwh-profile-name {
+  font-size: 1.75rem;
+}
+
+.pwh-profile-avatar--fallback {
+  align-items: center;
+  background: var(--pwh-primary);
+  color: #ffffff;
+  display: flex;
+  font-size: 2.25rem;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.pwh-profile-email {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  margin: 8px 0 0;
+}
+
+.pwh-profile-badge {
+  background: var(--pwh-tint);
+  border-radius: 999px;
+  color: var(--pwh-primary-dark);
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 14px;
+  padding: 5px 14px;
+  text-transform: uppercase;
+}
+
+.pwh-profile-stats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: 20px;
+}
+
+.pwh-profile-stat {
+  background: var(--pwh-tint);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+
+.pwh-profile-stat__value {
+  color: var(--pwh-ink);
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+
+.pwh-profile-stat__label {
+  color: var(--pwh-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pwh-profile-details {
+  padding: 32px 0 0;
+}
+
+.pwh-profile-detail-card {
+  background: var(--pwh-tint);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.pwh-profile-detail-card h3 {
+  border-bottom: 1px solid var(--pwh-border);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  text-transform: uppercase;
+  color: var(--pwh-muted);
+}
+
+.pwh-profile-detail-item {
+  border-bottom: 1px solid var(--pwh-border);
+  display: flex;
+  font-size: 0.9375rem;
+  justify-content: space-between;
+  padding: 12px 0;
+}
+
+.pwh-profile-detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pwh-profile-detail-label {
+  color: var(--pwh-muted);
+  font-weight: 600;
+}
+
+.pwh-profile-detail-value {
+  color: var(--pwh-ink);
+  font-weight: 600;
+}
+
+.pwh-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.pwh-profile-btn {
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 12px 26px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pwh-profile-btn--ghost {
+  border-color: var(--pwh-border);
+  background: var(--pwh-bg);
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-profile-btn--ghost:hover {
+  border-color: var(--pwh-danger);
+}
+
+.pwh-profile-btn--primary {
+  background: var(--pwh-primary);
+  color: #ffffff;
+}
+
+.pwh-profile-btn--primary:hover {
+  background: var(--pwh-primary-dark);
+}
+
+/* Loading / error / not-found states */
+.pwh-profile-state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.pwh-profile-state p {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.pwh-profile-state--error p {
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-profile-spinner {
+  animation: pwh-profile-spin 0.8s linear infinite;
+  border: 3px solid var(--pwh-border);
+  border-radius: 50%;
+  border-top-color: var(--pwh-primary);
+  height: 36px;
+  width: 36px;
+}
+
+@keyframes pwh-profile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .pwh-profile-card {
+    margin: 36px auto;
+    padding: 0 20px;
+  }
+}

@@ -1,0 +1,232 @@
+/*
+ * Styles scoped to the My Pets page only. Mirrors the design tokens and
+ * section rhythm used on the homepage (see home.css). Every class is
+ * prefixed "pwh-pets-" so it cannot collide with or affect other pages.
+ */
+
+.pwh-pets-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #e5484d;
+  --pwh-danger-dark: #c53030;
+
+  background: var(--pwh-bg);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  min-height: 60vh;
+  overflow-x: hidden;
+}
+
+.pwh-pets-page *,
+.pwh-pets-page *::before,
+.pwh-pets-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-pets-page h1,
+.pwh-pets-page h2,
+.pwh-pets-page h3 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-pets-page button {
+  font-family: inherit;
+}
+
+.pwh-pets-kicker {
+  color: var(--pwh-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+/* Header */
+.pwh-pets-header {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--pwh-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 56px 32px 36px;
+}
+
+.pwh-pets-header h1 {
+  font-size: 2.1rem;
+}
+
+.pwh-pets-header__lede {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  margin: 10px 0 0;
+}
+
+/* Buttons */
+.pwh-pets-btn {
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 12px 22px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pwh-pets-btn--primary {
+  background: var(--pwh-primary);
+  color: #ffffff;
+}
+
+.pwh-pets-btn--primary:hover {
+  background: var(--pwh-primary-dark);
+}
+
+/* Content area */
+.pwh-pets-content {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 40px 32px 80px;
+}
+
+.pwh-pets-state {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.pwh-pets-state--error {
+  color: var(--pwh-danger-dark);
+}
+
+/* Grid of pet cards */
+.pwh-pets-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pwh-pets-card {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 22px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.pwh-pets-card:hover {
+  border-color: var(--pwh-primary);
+  box-shadow: 0 8px 20px rgba(23, 32, 51, 0.08);
+  transform: translateY(-2px);
+}
+
+.pwh-pets-card__name {
+  color: var(--pwh-ink);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.pwh-pets-card__details {
+  color: var(--pwh-muted);
+  font-size: 0.9rem;
+  margin: 0 0 18px;
+}
+
+.pwh-pets-card__actions {
+  align-items: center;
+  border-top: 1px solid var(--pwh-border);
+  display: flex;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.pwh-pets-card__edit,
+.pwh-pets-card__delete {
+  border-radius: 6px;
+  border: 1px solid var(--pwh-border);
+  background: var(--pwh-bg);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.pwh-pets-card__edit {
+  color: var(--pwh-primary);
+}
+
+.pwh-pets-card__edit:hover {
+  border-color: var(--pwh-primary);
+}
+
+.pwh-pets-card__delete {
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-pets-card__delete:hover {
+  border-color: var(--pwh-danger);
+}
+
+.pwh-pets-card__arrow {
+  color: var(--pwh-muted);
+  font-size: 1.1rem;
+  margin-left: auto;
+}
+
+/* Empty state */
+.pwh-pets-empty {
+  align-items: center;
+  border: 1px dashed var(--pwh-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.pwh-pets-empty p:first-child {
+  color: var(--pwh-ink);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.pwh-pets-empty p:last-child {
+  color: var(--pwh-muted);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .pwh-pets-header {
+    padding: 40px 20px 28px;
+  }
+
+  .pwh-pets-content {
+    padding: 32px 20px 60px;
+  }
+
+  .pwh-pets-grid {
+    grid-template-columns: 1fr;
+  }
+}

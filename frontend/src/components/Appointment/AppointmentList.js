@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
 import './Appointment.css';
 
 const AppointmentList = () => {
@@ -21,7 +22,7 @@ const AppointmentList = () => {
     const fetchAppointments = async () => {
       try {
         setLoading(true);
-        const sessionRes = await fetch('http://localhost:8090/get-session', { credentials: 'include' });
+        const sessionRes = await fetch(`${API_BASE_URL}/get-session`, { credentials: 'include' });
         const sessionData = await sessionRes.json();
         if (!sessionData.user?._id) {
           setError('User not authenticated.');
@@ -29,7 +30,7 @@ const AppointmentList = () => {
           return;
         }
         const userId = sessionData.user._id;
-        const res = await axios.get(`http://localhost:8090/api/appointments/user/${userId}`, { withCredentials: true });
+        const res = await axios.get(`${API_BASE_URL}/api/appointments/user/${userId}`, { withCredentials: true });
         setAppointments(res.data);
         setLoading(false);
       } catch (err) {
@@ -69,7 +70,7 @@ const AppointmentList = () => {
     setSuccessMessage('');
     try {
       const res = await axios.put(
-        `http://localhost:8090/api/appointments/${editingId}`,
+        `${API_BASE_URL}/api/appointments/${editingId}`,
         {
           petName: editForm.petName,
           staffId: editForm.staffId,
@@ -94,7 +95,7 @@ const AppointmentList = () => {
     setError('');
     setSuccessMessage('');
     try {
-      await axios.delete(`http://localhost:8090/api/appointments/${id}`, { withCredentials: true });
+      await axios.delete(`${API_BASE_URL}/api/appointments/${id}`, { withCredentials: true });
       setAppointments((prev) => prev.filter((appt) => appt._id !== id));
       setSuccessMessage('Appointment cancelled successfully.');
     } catch (err) {
@@ -102,92 +103,109 @@ const AppointmentList = () => {
     }
   };
 
-  if (loading) return <p>Loading appointments...</p>;
-  if (error) return <p className="error-message">{error}</p>;
-
   return (
-    <div className="appointment-list-container">
-      <h2>Your Appointments</h2>
-      {successMessage && <p className="success-message">{successMessage}</p>}
-      {appointments.length === 0 ? (
-        <p>No appointments found.</p>
-      ) : (
-        <table className="appointment-table">
-          <thead>
-            <tr>
-              <th>Pet Name</th>
-              <th>Service Category</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {appointments.map((appt) =>
-              editingId === appt._id ? (
-                <tr key={appt._id} className="editing-row">
-                  <td>
-                    <input
-                      type="text"
-                      name="petName"
-                      value={editForm.petName}
-                      onChange={handleEditChange}
-                      required
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      name="serviceCategory"
-                      value={editForm.serviceCategory}
-                      onChange={handleEditChange}
-                      required
-                      disabled
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="date"
-                      name="appointmentDate"
-                      value={editForm.appointmentDate}
-                      onChange={handleEditChange}
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      max={new Date(new Date().setMonth(new Date().getMonth() + 60))
-                        .toISOString()
-                        .split('T')[0]}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="time"
-                      name="appointmentTime"
-                      value={editForm.appointmentTime}
-                      onChange={handleEditChange}
-                      required
-                    />
-                  </td>
-                  <td>
-                    <button onClick={submitEdit} className="save-btn">Save</button>
-                    <button onClick={cancelEdit} className="cancel-btn">Cancel</button>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={appt._id}>
-                  <td>{appt.petName}</td>
-                  <td>{appt.serviceCategory}</td>
-                  <td>{appt.appointmentDate ? new Date(appt.appointmentDate).toLocaleDateString() : ''}</td>
-                  <td>{appt.appointmentTime}</td>
-                  <td>
-                    <button onClick={() => startEdit(appt)} className="edit-btn">Edit</button>
-                    <button onClick={() => deleteAppointment(appt._id)} className="delete-btn">Cancel</button>
-                  </td>
-                </tr>
-              )
+    <div className="pwh-appt-page">
+      <div className="pwh-appt-header">
+        <p className="pwh-appt-kicker">Appointments</p>
+        <h1>Your Appointments</h1>
+        <p className="pwh-appt-header__lede">Manage upcoming veterinary and grooming appointments for your pets.</p>
+      </div>
+
+      <div className="pwh-appt-content">
+        {loading && <div className="pwh-appt-state">Loading appointments...</div>}
+        {error && !loading && <div className="pwh-appt-state pwh-appt-state--error">{error}</div>}
+
+        {!loading && !error && (
+          <>
+            {successMessage && <p className="pwh-appt-banner pwh-appt-banner--success">{successMessage}</p>}
+            {appointments.length === 0 ? (
+              <div className="pwh-appt-empty">No appointments found.</div>
+            ) : (
+              <div className="pwh-appt-table-wrap">
+                <table className="pwh-appt-table">
+                  <thead>
+                    <tr>
+                      <th>Pet Name</th>
+                      <th>Service Category</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appointments.map((appt) =>
+                      editingId === appt._id ? (
+                        <tr key={appt._id} className="pwh-appt-row--editing">
+                          <td>
+                            <input
+                              type="text"
+                              name="petName"
+                              value={editForm.petName}
+                              onChange={handleEditChange}
+                              required
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="serviceCategory"
+                              value={editForm.serviceCategory}
+                              onChange={handleEditChange}
+                              required
+                              disabled
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="date"
+                              name="appointmentDate"
+                              value={editForm.appointmentDate}
+                              onChange={handleEditChange}
+                              required
+                              min={new Date().toISOString().split('T')[0]}
+                              max={new Date(new Date().setMonth(new Date().getMonth() + 60))
+                                .toISOString()
+                                .split('T')[0]}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="time"
+                              name="appointmentTime"
+                              value={editForm.appointmentTime}
+                              onChange={handleEditChange}
+                              required
+                            />
+                          </td>
+                          <td>
+                            <div className="pwh-appt-actions">
+                              <button onClick={submitEdit} className="pwh-appt-btn pwh-appt-btn--save">Save</button>
+                              <button onClick={cancelEdit} className="pwh-appt-btn pwh-appt-btn--cancel">Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={appt._id}>
+                          <td>{appt.petName}</td>
+                          <td>{appt.serviceCategory}</td>
+                          <td>{appt.appointmentDate ? new Date(appt.appointmentDate).toLocaleDateString() : ''}</td>
+                          <td>{appt.appointmentTime}</td>
+                          <td>
+                            <div className="pwh-appt-actions">
+                              <button onClick={() => startEdit(appt)} className="pwh-appt-btn pwh-appt-btn--edit">Edit</button>
+                              <button onClick={() => deleteAppointment(appt._id)} className="pwh-appt-btn pwh-appt-btn--delete">Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
-          </tbody>
-        </table>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

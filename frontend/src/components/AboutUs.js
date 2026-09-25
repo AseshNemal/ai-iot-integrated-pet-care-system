@@ -1,173 +1,141 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import './AboutUs.css';
 import NemalPic from './pic/Nemal.jpg';
 import YasiduPic from './pic/Yasidu.JPG';
 import AdrielPic from './pic/Adriel.JPG';
 import SurathPic from './pic/Surath.jpeg';
 import RandimalPic from './pic/Randimal.JPG';
+import {
+  ActivityIcon,
+  MapPinIcon,
+  PulseIcon,
+  SparkleIcon,
+  ClipboardHeartIcon,
+  CalendarIcon,
+  HomeHeartIcon,
+  BagIcon,
+  ArrowRightIcon,
+} from './homeIcons';
 
 const teamMembers = [
   { name: 'Asesh Nemal', role: 'Developer / Designer', image: NemalPic, linkedin: 'http://linkedin.com/in/asesh-nemal-a0a520248' },
   { name: 'Yasindu Rasanga', role: 'Developer / Designer', image: YasiduPic, linkedin: 'http://linkedin.com/in/yasindu-rasanga-karawita-481549247' },
   { name: 'Adriel Damian', role: 'Developer / Designer', image: AdrielPic, linkedin: 'http://linkedin.com/in/adriel-perera-5a9730362' },
   { name: 'Surath Gayanatha', role: 'Developer / Designer', image: SurathPic, linkedin: 'http://linkedin.com/in/surath-gayanatha-081362335' },
-  { name: 'Randimal Lamahewa', role: 'Developer / Designer', image: RandimalPic, linkedin: 'http://linkedin.com/in/randimal-lamahewa-153483271' }
+  { name: 'Randimal Lamahewa', role: 'Developer / Designer', image: RandimalPic, linkedin: 'http://linkedin.com/in/randimal-lamahewa-153483271' },
 ];
 
+const KEY_FEATURES = [
+  { icon: ActivityIcon, label: 'IoT-based pet health and activity monitoring' },
+  { icon: MapPinIcon, label: 'GPS/location tracking for pets' },
+  { icon: PulseIcon, label: 'Heart rate, body temperature, activity, and environmental monitoring' },
+  { icon: SparkleIcon, label: 'AI-assisted pet behavior analysis and training guidance' },
+  { icon: ClipboardHeartIcon, label: 'Pet profiles, medical information, and health records' },
+  { icon: CalendarIcon, label: 'Veterinary appointment management' },
+  { icon: HomeHeartIcon, label: 'Pet adoption portal' },
+  { icon: BagIcon, label: 'Integrated pet store' },
+];
 
-const AboutUs = () => {
+function AboutUs() {
   return (
-    <section id="about-us" style={{ padding: '80px 20px', background: '#f5f7fa', textAlign: 'center' }}>
-      <div style={styles.container}>
-        <h2 style={styles.sectionTitle}>About Us</h2>
-
-        <p style={styles.headerSubtitle}>
-          We're a student-led innovation team building a comprehensive pet care and tracking system,
-          combining smart IoT devices with AI-powered health insights to improve the lives of pets and their owners.
-        </p>
-
-        {/* Mission */}
-        <div style={styles.block}>
-          <h3 style={styles.subTitle}>Our Mission</h3>
-          <p style={styles.text}>
-            To revolutionize pet care through intelligent technology that tracks, monitors, and supports the health and well-being of pets in real-time — making life easier and healthier for both pets and pet parents.
+    <div className="pwh-about-page">
+      {/* Intro */}
+      <section className="pwh-about-hero">
+        <div className="pwh-about-hero__inner">
+          <p className="pwh-about-kicker">About Us</p>
+          <h1>About Pet Wellness Hub</h1>
+          <p className="pwh-about-hero__lede">
+            Pet Wellness Hub is an AI- and IoT-integrated pet care platform
+            developed as part of our academic project at SLIIT. The system
+            brings pet health monitoring, pet management, veterinary
+            services, AI-assisted training, adoption, and pet-related
+            services into one platform.
           </p>
         </div>
+      </section>
 
-        {/* History */}
-        <div style={styles.block}>
-          <h3 style={styles.subTitle}>How It Started</h3>
-          <p style={styles.text}>
-            This project began as part of our academic journey at SLIIT. Inspired by the gaps in existing pet health monitoring solutions,
-            we set out to build something that was not only smart and useful — but truly life-enhancing for pets and their owners.
+      {/* Mission */}
+      <section className="pwh-about-band pwh-about-band--tint">
+        <div className="pwh-about-band__inner">
+          <h2>Our Mission</h2>
+          <p className="pwh-about-band__lede">
+            Our mission is to use IoT, AI, and modern software technologies
+            to make pet care easier, more informed, and more connected for
+            pet owners.
           </p>
         </div>
+      </section>
 
-        {/* Key Features */}
-        <div style={styles.block}>
-          <h3 style={styles.subTitle}>Key Features</h3>
-          <ul style={styles.list}>
-            <li>📍 Live GPS tracking and geofencing for pet safety</li>
-            <li>❤️ Real-time health monitoring (heart rate, temperature, activity)</li>
-            <li>🤖 AI-powered chatbot for symptom checking and support</li>
-            <li>🗓️ Vet appointment scheduling and health record keeping</li>
-            <li>🛍️ Integrated pet store and medication tracker</li>
+      {/* How it started */}
+      <section className="pwh-about-band">
+        <div className="pwh-about-band__inner">
+          <h2>How It Started</h2>
+          <p className="pwh-about-band__lede">
+            Pet Wellness Hub began as a university project focused on
+            combining software, IoT devices, and AI into a practical pet
+            care system.
+          </p>
+          <p className="pwh-about-band__lede">
+            The project has grown into a platform covering pet monitoring,
+            health records, appointments, AI-assisted pet training,
+            adoption, and other pet-care services.
+          </p>
+        </div>
+      </section>
+
+      {/* Key features */}
+      <section className="pwh-about-features">
+        <div className="pwh-about-features__inner">
+          <h2>What's Included</h2>
+          <ul className="pwh-about-features__grid">
+            {KEY_FEATURES.map(({ icon: Icon, label }) => (
+              <li key={label}>
+                <Icon className="pwh-about-icon" />
+                <span>{label}</span>
+              </li>
+            ))}
           </ul>
         </div>
+      </section>
 
-        {/* Team */}
-        <div style={styles.block}>
-          <h3 style={styles.subTitle}>Meet the Team</h3>
-          <div style={styles.teamGrid}>
-            {teamMembers.map((member, idx) => (
-              <a key={idx} href={member.linkedin} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                <div style={styles.teamCard}>
-                  <img src={member.image} alt={member.name} style={styles.avatar} />
-                  <p style={styles.memberName}>{member.name}</p>
-                  <p style={styles.role}>{member.role}</p>
-                </div>
+      {/* Team */}
+      <section className="pwh-about-team">
+        <div className="pwh-about-team__inner">
+          <h2>Meet the Team</h2>
+          <div className="pwh-about-team__grid">
+            {teamMembers.map((member) => (
+              <a
+                key={member.name}
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pwh-about-team__card"
+              >
+                <img src={member.image} alt={member.name} className="pwh-about-team__avatar" />
+                <p className="pwh-about-team__name">{member.name}</p>
+                <p className="pwh-about-team__role">{member.role}</p>
+                <span className="pwh-about-team__link">
+                  LinkedIn
+                  <ArrowRightIcon className="pwh-about-icon" style={{ height: 13, width: 13 }} />
+                </span>
               </a>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* Quote */}
-        <div style={styles.quoteBox}>
-          <blockquote style={styles.quote}>
-            "Until one has loved an animal, a part of one’s soul remains unawakened."
-          </blockquote>
-          <cite style={styles.cite}>– Anatole France</cite>
+      {/* Final CTA */}
+      <section className="pwh-about-final">
+        <div className="pwh-about-final__inner">
+          <h2>Explore what Pet Wellness Hub can do for your pet.</h2>
+          <Link to="/pet" className="pwh-about-btn pwh-about-btn--on-dark">
+            View My Pets
+          </Link>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: '1000px',
-    margin: '0 auto',
-    padding: '0 20px'
-  },
-  sectionTitle: {
-    fontSize: '2.8rem',
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: '30px'
-  },
-  headerSubtitle: {
-    fontSize: '1.2rem',
-    color: '#555',
-    maxWidth: '800px',
-    margin: '0 auto 50px auto'
-  },
-  block: {
-    marginBottom: '50px',
-    textAlign: 'left'
-  },
-  subTitle: {
-    fontSize: '1.8rem',
-    color: '#6e8efb',
-    marginBottom: '10px'
-  },
-  text: {
-    fontSize: '1rem',
-    color: '#444',
-    lineHeight: '1.7'
-  },
-  list: {
-    textAlign: 'left',
-    paddingLeft: '20px',
-    fontSize: '1rem',
-    color: '#444',
-    lineHeight: '1.8'
-  },
-  teamGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: '20px',
-    marginTop: '30px'
-  },
-  teamCard: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-    textAlign: 'center'
-  },
-  avatar: {
-    width: '70px',
-    height: '70px',
-    borderRadius: '50%',
-    objectFit: 'cover',
-    margin: '0 auto 10px'
-  },
-  memberName: {
-    fontWeight: '600',
-    fontSize: '1rem',
-    color: '#333'
-  },
-  role: {
-    fontSize: '0.9rem',
-    color: '#777'
-  },
-  quoteBox: {
-    marginTop: '60px',
-    backgroundColor: '#e3eaf4',
-    padding: '30px',
-    borderRadius: '12px',
-    textAlign: 'center'
-  },
-  quote: {
-    fontStyle: 'italic',
-    fontSize: '1.2rem',
-    color: '#444'
-  },
-  cite: {
-    display: 'block',
-    marginTop: '10px',
-    color: '#666',
-    fontSize: '0.9rem'
-  }
-};
+}
 
 export default AboutUs;

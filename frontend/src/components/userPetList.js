@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
+import "./userPetList.css";
 
 function UserPets() {
   const [pets, setPets] = useState([]);
@@ -12,17 +14,17 @@ function UserPets() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const sessionRes = await fetch("http://localhost:8090/get-session", { 
-          credentials: "include" 
+        const sessionRes = await fetch(`${API_BASE_URL}/get-session`, {
+          credentials: "include"
         });
         const sessionData = await sessionRes.json();
-        
+
         if (!sessionData.user) {
           throw new Error("User not logged in");
         }
 
         setUser(sessionData.user);
-        const petsRes = await axios.get(`http://localhost:8090/pet/find/${sessionData.user._id}`);
+        const petsRes = await axios.get(`${API_BASE_URL}/pet/find/${sessionData.user._id}`);
         setPets(petsRes.data.pets || []);
       } catch (err) {
         console.error("Error:", err);
@@ -49,8 +51,8 @@ function UserPets() {
     try {
       const confirmDelete = window.confirm("Are you sure you want to delete this pet?");
       if (!confirmDelete) return;
-      
-      await axios.delete(`http://localhost:8090/pet/delete/${petId}`);
+
+      await axios.delete(`${API_BASE_URL}/pet/delete/${petId}`);
       setPets(pets.filter(pet => pet._id !== petId));
     } catch (err) {
       console.error("Error deleting pet:", err);
@@ -59,188 +61,67 @@ function UserPets() {
   };
 
   return (
-    <div className="user-pets-container">
-      <h2 className="user-pets-title">{user?.displayName || 'User'}'s Pets</h2>
-      {loading && <div className="loading">Loading pets...</div>}
-      {error && <div className="error">Error: {error}</div>}
-      {!loading && !error && (
-        <ul className="pets-list">
-          {pets.length === 0 ? (
-            <li className="no-pets">No pets found for this user.</li>
-          ) : (
-            pets.map((pet) => (
-              <li 
-                key={pet._id}
-                onClick={() => handlePetClick(pet._id)}
-                className="pet-item"
-              >
-                <div className="pet-info">
-                  <span className="pet-name">{pet.petName}</span>
-                  <span className="pet-details">
-                    {pet.species} | {pet.breed}
-                  </span>
-                </div>
-                <div className="pet-actions">
-                  <button 
-                    className="edit-button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // prevent triggering the pet click event
-                      navigate(`/pet/edit/${pet._id}`);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="delete-button"
-                    onClick={(e) => handleDeletePet(pet._id, e)}
-                  >
-                    Delete
-                  </button>
-                  <div className="pet-arrow">→</div>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
+    <div className="pwh-pets-page">
+      <div className="pwh-pets-header">
+        <div>
+          <p className="pwh-pets-kicker">My Pets</p>
+          <h1>{user?.displayName ? `${user.displayName}'s Pets` : 'My Pets'}</h1>
+          <p className="pwh-pets-header__lede">Profiles, medical history and appointments for every pet on your account.</p>
+        </div>
+        <button
+          onClick={() => navigate(`/pet/add`)}
+          className="pwh-pets-btn pwh-pets-btn--primary"
+        >
+          + Add New Pet
+        </button>
+      </div>
 
-      <button 
-        onClick={() => navigate(`/pet/add`)}
-        className="add-record-button"
-      >
-        + Add New Pet
-      </button>
+      <div className="pwh-pets-content">
+        {loading && <div className="pwh-pets-state">Loading pets...</div>}
+        {error && !loading && <div className="pwh-pets-state pwh-pets-state--error">{error}</div>}
+
+        {!loading && !error && (
+          pets.length === 0 ? (
+            <div className="pwh-pets-empty">
+              <p>No pets found for this user.</p>
+              <p>Add your first pet to start tracking their care.</p>
+            </div>
+          ) : (
+            <ul className="pwh-pets-grid">
+              {pets.map((pet) => (
+                <li
+                  key={pet._id}
+                  onClick={() => handlePetClick(pet._id)}
+                  className="pwh-pets-card"
+                >
+                  <p className="pwh-pets-card__name">{pet.petName}</p>
+                  <p className="pwh-pets-card__details">{pet.species} · {pet.breed}</p>
+                  <div className="pwh-pets-card__actions">
+                    <button
+                      className="pwh-pets-card__edit"
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent triggering the pet click event
+                        navigate(`/pet/edit/${pet._id}`);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="pwh-pets-card__delete"
+                      onClick={(e) => handleDeletePet(pet._id, e)}
+                    >
+                      Delete
+                    </button>
+                    <span className="pwh-pets-card__arrow">→</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
+      </div>
     </div>
   );
 }
 
 export default UserPets;
-
-// CSS Styles
-const styles = `
-  .user-pets-container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 1.5rem;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-
-  .add-record-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 0.7rem 1.2rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s;
-    margin: 2rem auto;
-  }
-
-  .user-pets-title {
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
-    font-size: 1.8rem;
-    text-align: center;
-  }
-
-  .pets-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .pet-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    margin-bottom: 0.8rem;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-
-  .pet-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background-color: #f8f9fa;
-  }
-
-  .pet-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .pet-name {
-    font-weight: 600;
-    color: #3498db;
-    font-size: 1.1rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .pet-details {
-    color: #7f8c8d;
-    font-size: 0.9rem;
-  }
-
-  .pet-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .delete-button {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.2s;
-  }
-
-  .delete-button:hover {
-    background-color: #c0392b;
-  }
-
-  .pet-arrow {
-    color: #bdc3c7;
-    font-size: 1.2rem;
-  }
-
-  .loading, .error, .no-pets {
-    text-align: center;
-    padding: 2rem;
-    font-size: 1.2rem;
-    color: #7f8c8d;
-  }
-
-  .edit-button {
-    background-color: #f1c40f;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.2s;
-  }
-
-  .edit-button:hover {
-    background-color: #d4ac0d;
-  }
-
-  .error {
-    color: #e74c3c;
-  }
-`;
-
-// Inject styles into the document head
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
