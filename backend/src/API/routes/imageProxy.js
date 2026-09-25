@@ -11,6 +11,11 @@ router.get("/profile-image", async (req, res) => {
   }
 
   try {
+    // Fix (V13)
+    const parsed = new URL(imageUrl);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      return res.status(403).json({ error: "Access to localhost is forbidden (SSRF Protected)" });
+    }
     const response = await axios.get(imageUrl, {
       responseType: "stream",
     });
