@@ -3,7 +3,7 @@ const Order = require("../model/Order");
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middlewere');
 
-router.post("/create", async (req, res) => {
+router.post("/create", authenticate, async (req, res) => {
   try {
     const { userId, items, totalAmount } = req.body;
     const order = new Order({ userId, items, totalAmount });
@@ -14,7 +14,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userId", authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
     const orders = await Order.find({ userId }).sort({ createdAt: -1 });

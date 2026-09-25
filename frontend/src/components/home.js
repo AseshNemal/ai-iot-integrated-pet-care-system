@@ -4,6 +4,7 @@ import './home.css';
 import storeScreenshot from '../assets/home/store-screenshot.png';
 import trackerDevicePhoto from '../assets/home/tracker-device.jpg';
 import aiTrainingDogPhoto from '../assets/home/ai-training-dog.jpg';
+import everydayCarePhoto from '../assets/home/everyday-care-pets.jpg';
 import {
   PawIcon,
   ClipboardHeartIcon,
@@ -154,24 +155,33 @@ function Home() {
       </section>
 
       {/* Pet management / everyday care */}
-      <section className="pwh-band pwh-band--tint">
-        <div className="pwh-band__inner pwh-band__inner--narrow">
-          <p className="pwh-kicker">Everyday care</p>
-          <h2>Keep your pet's care organized</h2>
-          <p className="pwh-band__lede">
-            A pet's profile brings their basic details, medical history and
-            upcoming appointments together, so you're not digging through
-            old messages before a vet visit.
-          </p>
-          <ul className="pwh-plain-list">
-            <li>Profile &amp; basic details</li>
-            <li>Medical history</li>
-            <li>Upcoming appointments</li>
-          </ul>
-          <Link to="/pet" className="pwh-link-cta">
-            Manage my pets
-            <ArrowRightIcon className="pwh-icon" />
-          </Link>
+      <section className="pwh-split-tint-bg">
+        <div className="pwh-split">
+          <div className="pwh-split__media">
+            <img
+              src={everydayCarePhoto}
+              alt="A golden retriever and a cat resting together at home"
+              loading="lazy"
+            />
+          </div>
+          <div className="pwh-split__copy">
+            <p className="pwh-kicker">Everyday care</p>
+            <h2>Keep your pet's care organized</h2>
+            <p className="pwh-split__lede">
+              A pet's profile brings their basic details, medical history and
+              upcoming appointments together, so you're not digging through
+              old messages before a vet visit.
+            </p>
+            <ul className="pwh-plain-list">
+              <li>Profile &amp; basic details</li>
+              <li>Medical history</li>
+              <li>Upcoming appointments</li>
+            </ul>
+            <Link to="/pet" className="pwh-link-cta">
+              Manage my pets
+              <ArrowRightIcon className="pwh-icon" />
+            </Link>
+          </div>
         </div>
       </section>
 

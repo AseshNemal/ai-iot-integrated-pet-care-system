@@ -29,6 +29,7 @@ import logger from "../utils/logger";
 
 const SIMULATOR_ID_RANGE_START = 900001;
 const DEFAULT_TICK_INTERVAL_MS = 15000; // stays well under the dashboard's 4-minute "disconnected" threshold
+const MAX_RUN_MS = 5 * 60 * 1000; // auto-stop a run after 5 minutes so a forgotten/closed tab doesn't keep writing telemetry indefinitely
 
 let nextDeviceId = SIMULATOR_ID_RANGE_START;
 const devices = new Map(); // deviceId (number) -> device state
@@ -185,14 +186,16 @@ async function publishTelemetry(deviceId, readings) {
   return payload;
 }
 
-function createDevice() {
+function createDevice(ownerId) {
   const deviceId = nextDeviceId;
   nextDeviceId += 1;
 
   devices.set(deviceId, {
     deviceId,
+    ownerId: String(ownerId),
     readings: createInitialReadings(),
     intervalId: null,
+    autoStopTimeoutId: null,
     intervalMs: DEFAULT_TICK_INTERVAL_MS,
     running: false,
     startedAt: null,
@@ -205,6 +208,17 @@ function createDevice() {
 
 function getDevice(deviceId) {
   return devices.get(Number(deviceId));
+}
+
+function clearTimers(device) {
+  if (device.intervalId) {
+    clearInterval(device.intervalId);
+    device.intervalId = null;
+  }
+  if (device.autoStopTimeoutId) {
+    clearTimeout(device.autoStopTimeoutId);
+    device.autoStopTimeoutId = null;
+  }
 }
 
 function startDevice(deviceId, intervalMs) {
@@ -233,6 +247,11 @@ function startDevice(deviceId, intervalMs) {
   tick();
   device.intervalId = setInterval(tick, device.intervalMs);
 
+  // Bound how long an unattended/forgotten run can keep writing telemetry
+  // (a closed browser tab may also send a best-effort stop, but this timer
+  // is the guaranteed backstop regardless of what the client does).
+  device.autoStopTimeoutId = setTimeout(() => stopDevice(deviceId), MAX_RUN_MS);
+
   return device;
 }
 
@@ -240,13 +259,19 @@ function stopDevice(deviceId) {
   const device = getDevice(deviceId);
   if (!device) return null;
 
-  if (device.intervalId) {
-    clearInterval(device.intervalId);
-    device.intervalId = null;
-  }
+  clearTimers(device);
   device.running = false;
 
   return device;
+}
+
+function deleteDevice(deviceId) {
+  const device = getDevice(deviceId);
+  if (!device) return false;
+
+  clearTimers(device);
+  devices.delete(device.deviceId);
+  return true;
 }
 
 function toStatus(device) {
@@ -267,5 +292,6 @@ module.exports = {
   getDevice,
   startDevice,
   stopDevice,
+  deleteDevice,
   toStatus,
 };

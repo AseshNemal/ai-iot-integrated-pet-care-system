@@ -1,96 +1,230 @@
-.appointment-list-container {
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 1rem 2rem;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+/*
+ * Styles scoped to the appointment management page only (AppointmentList.js).
+ * Mirrors the design tokens used on the homepage (see home.css). Every class
+ * is prefixed "pwh-appt-" so it cannot collide with or affect other pages.
+ */
+
+.pwh-appt-page {
+  --pwh-ink: #172033;
+  --pwh-muted: #5f6b7a;
+  --pwh-primary: #4f6ef7;
+  --pwh-primary-dark: #263a6b;
+  --pwh-border: #e3e8f0;
+  --pwh-tint: #f5f7fb;
+  --pwh-bg: #ffffff;
+  --pwh-danger: #e5484d;
+  --pwh-danger-dark: #c53030;
+  --pwh-success: #1a9c6b;
+  --pwh-success-tint: #e6f6ef;
+
+  background: var(--pwh-bg);
+  color: var(--pwh-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Work Sans', Roboto, sans-serif;
+  min-height: 60vh;
+}
+
+.pwh-appt-page *,
+.pwh-appt-page *::before,
+.pwh-appt-page *::after {
+  box-sizing: border-box;
+}
+
+.pwh-appt-page h1,
+.pwh-appt-page h2 {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pwh-appt-page button,
+.pwh-appt-page input {
+  font-family: inherit;
+}
+
+.pwh-appt-header {
+  border-bottom: 1px solid var(--pwh-border);
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 56px 32px 36px;
+}
+
+.pwh-appt-kicker {
+  color: var(--pwh-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.pwh-appt-header h1 {
+  font-size: 2.1rem;
+}
+
+.pwh-appt-header__lede {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  margin: 10px 0 0;
+}
+
+.pwh-appt-content {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 32px 32px 80px;
+}
+
+.pwh-appt-state {
+  color: var(--pwh-muted);
+  font-size: 1rem;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.pwh-appt-state--error {
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-appt-banner {
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+}
+
+.pwh-appt-banner--success {
+  background: var(--pwh-success-tint);
+  color: var(--pwh-success);
+}
+
+.pwh-appt-banner--error {
+  background: #fdecec;
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-appt-empty {
+  border: 1px dashed var(--pwh-border);
+  border-radius: 12px;
+  color: var(--pwh-muted);
+  padding: 60px 20px;
+  text-align: center;
+}
+
+/* Table */
+.pwh-appt-table-wrap {
+  background: var(--pwh-bg);
+  border: 1px solid var(--pwh-border);
+  border-radius: 12px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.pwh-appt-table {
+  border-collapse: collapse;
+  min-width: 640px;
+  width: 100%;
+}
+
+.pwh-appt-table th {
+  background: var(--pwh-tint);
+  color: var(--pwh-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 14px 18px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.pwh-appt-table td {
+  border-top: 1px solid var(--pwh-border);
+  color: var(--pwh-ink);
+  font-size: 0.9375rem;
+  padding: 14px 18px;
+  vertical-align: middle;
+}
+
+.pwh-appt-table tbody tr:hover {
+  background: var(--pwh-tint);
+}
+
+.pwh-appt-table tbody tr.pwh-appt-row--editing:hover {
+  background: transparent;
+}
+
+.pwh-appt-table input {
+  border: 1px solid var(--pwh-border);
+  border-radius: 6px;
+  color: var(--pwh-ink);
+  font-size: 0.875rem;
+  padding: 7px 10px;
+  width: 100%;
+}
+
+.pwh-appt-table input:disabled {
+  background: var(--pwh-tint);
+  color: var(--pwh-muted);
+}
+
+.pwh-appt-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.pwh-appt-btn {
+  background: var(--pwh-bg);
+  border-radius: 6px;
+  border: 1px solid var(--pwh-border);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.pwh-appt-btn--edit {
+  color: var(--pwh-primary);
+}
+
+.pwh-appt-btn--edit:hover {
+  border-color: var(--pwh-primary);
+}
+
+.pwh-appt-btn--delete {
+  color: var(--pwh-danger-dark);
+}
+
+.pwh-appt-btn--delete:hover {
+  border-color: var(--pwh-danger);
+}
+
+.pwh-appt-btn--save {
+  background: var(--pwh-primary);
+  border-color: var(--pwh-primary);
+  color: #ffffff;
+}
+
+.pwh-appt-btn--save:hover {
+  background: var(--pwh-primary-dark);
+  border-color: var(--pwh-primary-dark);
+}
+
+.pwh-appt-btn--cancel {
+  color: var(--pwh-muted);
+}
+
+.pwh-appt-btn--cancel:hover {
+  border-color: var(--pwh-muted);
+}
+
+@media (max-width: 600px) {
+  .pwh-appt-header {
+    padding: 40px 20px 28px;
   }
-  
-  .appointment-list-container h2 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #333;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  .pwh-appt-content {
+    padding: 24px 20px 60px;
   }
-  
-  .appointment-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  
-  .appointment-table th,
-  .appointment-table td {
-    border: 1px solid #ddd;
-    padding: 0.75rem 1rem;
-    text-align: left;
-  }
-  
-  .appointment-table th {
-    background-color: #4a90e2;
-    color: white;
-    font-weight: 600;
-  }
-  
-  .appointment-table tr:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  
-  .appointment-table tr:hover {
-    background-color: #e6f0ff;
-  }
-  
-  .editing-row input[type="text"],
-  .editing-row input[type="date"],
-  .editing-row input[type="time"] {
-    width: 100%;
-    padding: 0.4rem;
-    box-sizing: border-box;
-    border: 1px solid #4a90e2;
-    border-radius: 4px;
-  }
-  
-  .edit-btn,
-  .delete-btn,
-  .save-btn,
-  .cancel-btn {
-    background-color: #4a90e2;
-    border: none;
-    color: white;
-    padding: 0.4rem 0.8rem;
-    margin-right: 0.3rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-  }
-  
-  .delete-btn {
-    background-color: #e04e4e;
-  }
-  
-  .edit-btn:hover,
-  .delete-btn:hover,
-  .save-btn:hover,
-  .cancel-btn:hover {
-    background-color: #357abd;
-  }
-  
-  .delete-btn:hover {
-    background-color: #b73737;
-  }
-  
-  .success-message {
-    color: green;
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-  
-  .error-message {
-    color: red;
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-  
-  
+}
