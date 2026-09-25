@@ -51,6 +51,7 @@ router.post('/create', authenticate, async (req, res) => {
 // Retrieve All Employees
 router.get('/', authenticate, async (req, res) => {
     try {
+        //SECURITY FIX (V07-employee-password-leak)
         const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json(employees);
@@ -62,6 +63,7 @@ router.get('/', authenticate, async (req, res) => {
 
 router.get('/get', authenticate, async (req, res) => {
     try {
+        //to prevent plaintext employee credentials leaking in API responses
         const employees = await Employee.find().select('-password');
         const totalCount = employees.length; // Include count in response
         res.status(200).json({ employees, totalCount });
