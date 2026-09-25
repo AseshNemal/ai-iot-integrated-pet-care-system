@@ -55,7 +55,10 @@ const Profile = () => {
       await axios.post(`${API_BASE_URL}/logout`, {}, {
         withCredentials: true
       });
-      navigate("/login");
+      // Full reload (not navigate) so Header re-fetches the session and
+      // drops its stale logged-in state instead of showing a signed-out
+      // page with a signed-in header.
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout error:", err);
     }

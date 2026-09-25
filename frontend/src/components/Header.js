@@ -219,7 +219,7 @@ function Header() {
                   >
                     {user.image && (
                       <img
-                        src={user.image.replace('=s96-c', '=s200-c')}
+                        src={user.image}
                         alt="Profile"
                         className="rounded-circle mr-2"
                         width="32"
@@ -237,7 +237,7 @@ function Header() {
                     <Link to="/profile" className="dropdown-item">Profile</Link>
                     <Link to="/notifications" className="dropdown-item">Notifications</Link>
                     <Link to="/appointments/manage" className="dropdown-item">My Appointment</Link>
-                    <a href="#" onClick={handleLogout} className="dropdown-item">Logout</a>
+                    <button type="button" onClick={handleLogout} className="dropdown-item">Logout</button>
                   </div>
                 </div>
               ) : (
