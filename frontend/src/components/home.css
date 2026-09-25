@@ -289,6 +289,10 @@ a.pwh-link-cta {
 }
 
 /* Split (image + copy) sections */
+.pwh-split-tint-bg {
+  background: var(--pwh-tint);
+}
+
 .pwh-split {
   align-items: center;
   display: grid;
