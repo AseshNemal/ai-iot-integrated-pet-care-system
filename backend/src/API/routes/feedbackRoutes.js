@@ -43,13 +43,18 @@ router.delete("/delete/:id", authenticate, async (req, res) => {
   
   // Update a feedback
   router.put("/edit/:id", authenticate, async (req, res) => {
-    const { feedback, rating } = req.body;
-  
     try {
+      const updates = {};
+      ["feedback", "rating"].forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+          updates[field] = req.body[field];
+        }
+      });
+
       const updatedFeedback = await Feedback.findByIdAndUpdate(
         req.params.id,
-        { feedback, rating },
-        { new: true }
+        { $set: updates },
+        { new: true, runValidators: true }
       );
   
       if (!updatedFeedback) {

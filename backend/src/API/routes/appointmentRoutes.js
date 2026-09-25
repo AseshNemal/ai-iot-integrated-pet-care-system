@@ -182,14 +182,6 @@ router.get("/user/:userId", authenticate, async (req, res) => {
 router.put("/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { appointmentDate } = req.body;
-
-    if (appointmentDate) {
-      const apptDate = new Date(appointmentDate);
-      if (!isValidAppointmentDate(apptDate)) {
-        return res.status(400).json({ error: "Appointment date must be within 60 months from today." });
-      }
-    }
 
     const appointment = await Appointment.findById(id);
 
@@ -201,10 +193,21 @@ router.put("/:id", authenticate, async (req, res) => {
       return res.status(403).json({ error: "You do not have permission to update this appointment." });
     }
 
-    editableFieldsFor(appointment, req.user).forEach((field) => {
+    const editableFields = editableFieldsFor(appointment, req.user);
+    const hasAppointmentDate = Object.prototype.hasOwnProperty.call(req.body, "appointmentDate");
+    let parsedAppointmentDate;
+
+    if (hasAppointmentDate && editableFields.includes("appointmentDate")) {
+      parsedAppointmentDate = new Date(req.body.appointmentDate);
+      if (!isValidAppointmentDate(parsedAppointmentDate)) {
+        return res.status(400).json({ error: "Appointment date must be within 60 months from today." });
+      }
+    }
+
+    editableFields.forEach((field) => {
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
         appointment[field] = field === "appointmentDate"
-          ? new Date(req.body[field])
+          ? parsedAppointmentDate
           : req.body[field];
       }
     });
