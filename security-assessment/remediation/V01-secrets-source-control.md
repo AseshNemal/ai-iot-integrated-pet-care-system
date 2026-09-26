@@ -22,3 +22,12 @@ A sanitized evidence copy is retained at `security-assessment/evidence/V01/backe
 - Retain safe `backend/.env.example` and `frontend/.env.example` templates with their required variable names.
 - Require production secrets to be supplied through runtime/deployment environment variables.
 - Preserve Git history without rewriting it for assignment/audit purposes.
+
+## Remediation Implemented
+
+- The affected credentials were rotated/revoked before this change, as confirmed by the student.
+- `backend/.env.production` was removed from the active repository and source tree.
+- Existing environment-file patterns in the root `.gitignore` were confirmed: `.env`, `.env.*`, and `!.env.example`, with equivalent backend/frontend rules. These already cover production and local environment files, so no rule changes were necessary.
+- Safe `backend/.env.example` and `frontend/.env.example` templates were reviewed and retained with their existing variable names. Their values are blank, explicit placeholders, or development defaults.
+- Production secrets must now be supplied through runtime/deployment environment variables rather than the removed tracked file. Existing application environment-variable reads were retained.
+- Git history was intentionally preserved. The previous file remains in historical commits for audit/assignment purposes.
