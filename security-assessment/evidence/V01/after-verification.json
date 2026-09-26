@@ -1,0 +1,62 @@
+{
+  "finding": "V01 — Secrets Committed to Source Control",
+  "student": "Asesh Nemal",
+  "student_id": "IT23236264",
+  "module": "SE4030 Secure Software Development",
+  "branch": "security-fix/v01-remove-production-env",
+  "baseline_commit": "ab07e3cab6d0fa8ce14e57e990b2c65be32b1394",
+  "before_evidence_commit": "f1d8584a97a83064417af0132066a1ae9eb7921e",
+  "security_fix_commit": "249a0a4dea76de1eda154f8fc84a3ec1ea5aeff6",
+  "verification": {
+    "production_env_tracked": false,
+    "production_env_exists": false,
+    "production_env_ignored": true,
+    "ignore_rule": ".gitignore:7:backend/.env.*\tbackend/.env.production",
+    "tracked_env_templates": [
+      "backend/.env.example",
+      "frontend/.env.example"
+    ],
+    "templates_unchanged_from_baseline": true,
+    "templates_allowed_by_ignore_rules": true,
+    "local_and_environment_variant_paths_ignored": true,
+    "sanitized_snapshot_tracked": true,
+    "snapshot_all_values_redacted": true,
+    "snapshot_variable_names_match_original": true,
+    "baseline_history_preserved": true,
+    "working_tree_diff_check": "passed",
+    "branch_diff_check": "passed"
+  },
+  "credential_rotation": "Rotated/revoked before remediation, as confirmed by the student; provider status not independently verified.",
+  "tracked_secret_review": {
+    "scope": "current tracked files only; no history scan or credential-provider validation",
+    "text_files_reviewed": 193,
+    "binary_files_skipped": 26,
+    "suspicious_locations": [
+      {
+        "file": "backend/src/API/routes/__tests__/workerIngestionAuth.test.js",
+        "key": "perDeviceSecret",
+        "appears_real_credential": "No: apparent test fixture"
+      },
+      {
+        "file": "security-assessment/evidence/V28-ingestion/after-fix-spoof-test.js",
+        "key": "SHARED_SECRET",
+        "appears_real_credential": "Uncertain: literal in assignment test evidence; validity not checked"
+      }
+    ],
+    "review_method": "Heuristic review of current tracked text: credential variable assignments, environment fallbacks, credential-bearing URLs, common API/token formats, and private-key markers. Fetch options and dependency metadata were classified as non-secret."
+  },
+  "backend_tests": {
+    "command": "cd backend && npm test -- --runInBand",
+    "exit_code": 0,
+    "summary": [
+      "Test Suites: 5 passed, 5 total",
+      "Tests:       38 passed, 38 total",
+      "Snapshots:   0 total",
+      "Time:        3.044 s"
+    ],
+    "output_suppressed": "All other output withheld to avoid exposing credential values."
+  },
+  "frontend_build": "Not run; frontend source, templates, and package manifests were unchanged.",
+  "deployment": "Not performed; runtime secrets must be supplied by the deployment environment.",
+  "push": "Not performed; awaiting user approval."
+}
