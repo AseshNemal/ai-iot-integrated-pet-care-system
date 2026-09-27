@@ -48,6 +48,8 @@ function AppContent() {
   const isAdminRoute = 
   location.pathname === '/adminDashboard' || 
   location.pathname === '/adminDashboard/product' ||
+  location.pathname === '/adminProducts' ||
+  location.pathname === '/admin-dashboard' ||
   location.pathname === '/financial' ||
   location.pathname === '/financial/expenses' ||
   location.pathname === '/financial/orders' ||
@@ -80,11 +82,11 @@ function AppContent() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/pets/:petId" element={<PetRecord />} />
           <Route path="/pets/:petId/medical" element={<AddMedicalRecord />} />
-          <Route path="/adminProducts" element={<AdminDashboard />}/>
+          <Route path="/adminProducts" element={<HrAdminGuard><AdminDashboard /></HrAdminGuard>}/>
           <Route path="/employee" element={<HrAdminGuard><AddEmployee /></HrAdminGuard>} />
           <Route path="/adminDashboard" element={<HrAdminGuard><Dashboard /></HrAdminGuard>} />
           <Route path="/adoption-portal" element={<AdoptionPortal />} />
-          <Route path="/admin-dashboard" element={<PetAdAdminDashboard />} /> 
+          <Route path="/admin-dashboard" element={<HrAdminGuard><PetAdAdminDashboard /></HrAdminGuard>} />
           <Route path="/submit-ad" element={<SubmitAd />} />
           <Route path="/payment" element={<PaymentPage />}/>
           <Route path="/my-orders" element={<MyOrdersPage />}/>
@@ -94,10 +96,9 @@ function AppContent() {
             </React.Suspense>
           } />
           <Route path="/product/all" element={<StorePage />} />
-          <Route path="/adminDashboard" element={<HrAdminGuard><AdminDashboard /></HrAdminGuard>} />
           <Route path="/appointments" element={<ServicesLanding />} />
           <Route path="/appointments/manage" element={<AppointmentList />} />
-          <Route path="/adminDashboard/product" element={<AdminDashboard />} />
+          <Route path="/adminDashboard/product" element={<HrAdminGuard><AdminDashboard /></HrAdminGuard>} />
           <Route path="/petTrainingForm" element={<PetTrainingForm />} />
 
           <Route path="/feedbackform" element={<FeedBackForm />} />
