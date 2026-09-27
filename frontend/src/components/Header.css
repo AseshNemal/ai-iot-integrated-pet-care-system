@@ -71,6 +71,26 @@
   color: #ffffff;
 }
 
+.site-header__auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-header .btn-outline-secondary {
+  border: 1px solid #d0d8cf;
+  border-radius: 999px;
+  color: #2b4a3e;
+  font-weight: 650;
+  padding: 6px 16px;
+  text-decoration: none;
+}
+
+.site-header .btn-outline-secondary:hover {
+  background: #f2f6f0;
+  border-color: #2b4a3e;
+}
+
 .site-header .dropdown-menu {
   border: 1px solid #dce3da;
   border-radius: 8px;
@@ -109,6 +129,11 @@
 
   .site-header .d-flex.align-items-center {
     align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .site-header__auth-actions {
+    align-items: stretch;
     flex-direction: column;
   }
 }

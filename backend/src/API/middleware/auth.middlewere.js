@@ -1,6 +1,22 @@
-const authenticate = (req, res, next) => {
+const Employee = require('../model/Employee');
+
+const authenticate = async (req, res, next) => {
     // Employee/admin logins use the same server-side session store as Passport.
-    // Prefer that identity when present, then fall back to a Google/Passport user.
+    // Current HR sessions store the employee ID. Older sessions may still contain
+    // an employee object, so accept both formats during the transition.
+    if (req.session?.employeeId) {
+        try {
+            const employee = await Employee.findById(req.session.employeeId);
+            if (employee) {
+                req.user = employee;
+                return next();
+            }
+            delete req.session.employeeId;
+        } catch (error) {
+            return next(error);
+        }
+    }
+
     if (req.session?.employee) {
         req.user = req.session.employee;
         return next();

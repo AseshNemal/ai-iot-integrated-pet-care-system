@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
 import hrApi from "../utils/hrApi"
+import AdminShell from "./AdminShell"
 import { Bar } from "react-chartjs-2"
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 function Dashboard() {
-  const navigate = useNavigate()
   const [receivedData, setReceivedData] = useState([])
   const [totalEmployeeCount, setTotalEmployeeCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -16,17 +15,6 @@ function Dashboard() {
   const [sortField, setSortField] = useState("appointmentCount")
   const [sortOrder, setSortOrder] = useState("desc")
   const [filterRole, setFilterRole] = useState("")
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-
-  const handleLogout = async () => {
-    try {
-      await hrApi.post('/employee/logout')
-      navigate('/employee-login')
-    } catch (logoutError) {
-      console.error('HR logout failed:', logoutError)
-      setError('Logout failed. Please try again.')
-    }
-  }
 
   useEffect(() => {
     fetchReceivedData()
@@ -134,7 +122,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="dashboard-wrapper">
+    <>
       <style>{`
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
         @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css");
@@ -710,67 +698,8 @@ function Dashboard() {
         }
       `}</style>
 
-      <div className="top-navbar">
-        <div className="navbar-brand">Pet Care Admin</div>
-        <div className="navbar-user">
-          <span>Admin User</span>
-          <button type="button" className="logout-link" onClick={handleLogout}>
-            <i className="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </div>
-      </div>
-      <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
-        <button className="sidebar-toggle" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-          <i className={`fas ${isSidebarCollapsed ? "fa-chevron-right" : "fa-chevron-left"}`}></i>
-        </button>
-        <h3 className="sidebar-title">Menu</h3>
-        <ul>
-          <li className="active">
-            <Link to="/adminDashboard">
-              <i className="fas fa-tachometer-alt"></i>
-              <span>Dashboard</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/employee">
-              <i className="fas fa-users"></i>
-              <span>Employee Management</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/admin-dashboard">
-              <i className="fas fa-shield-alt"></i>
-              <span>Admin Dashboard (Ads)</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/adminDashboard/product">
-              <i className="fas fa-shopping-cart"></i>
-              <span>Products</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/adoption-portal">
-              <i className="fas fa-paw"></i>
-              <span>Adoption Portal</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/submit-ad">
-              <i className="fas fa-plus-circle"></i>
-              <span>Submit Ad</span>
-            </Link>
-          </li>
-          <li>
-            <Link to="/financial">
-              <i className="fas fa-plus-circle"></i>
-              <span>Financial Management</span>
-            </Link>
-          </li>
-        </ul>
-      </div>
-      <div className={`main-content ${isSidebarCollapsed ? "collapsed" : ""}`}>
-        <h2 className="page-title">Employee Dashboard</h2>
+      <AdminShell pageTitle="Employee performance dashboard">
+      <div className="dashboard-page-content">
 
         {error && <div className="alert alert-danger">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
@@ -880,7 +809,8 @@ function Dashboard() {
           )}
         </div>
       </div>
-    </div>
+      </AdminShell>
+    </>
   )
 }
 

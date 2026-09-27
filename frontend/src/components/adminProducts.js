@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
 import "../AdminDashboard.css"
+import AdminShell from "./AdminShell"
 
 const AdminDashboard = () => {
   const [products, setProducts] = useState([])
@@ -82,9 +83,9 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="admin-container">
+    <AdminShell pageTitle="Product management">
+    <div className="admin-container admin-container--embedded">
       <div className="admin-header">
-        <h1>Pet Store Management</h1>
         <div className="search-add-container">
           <div className="search-container">
             <input
@@ -279,6 +280,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+    </AdminShell>
   )
 }
 

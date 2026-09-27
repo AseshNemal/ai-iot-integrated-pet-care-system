@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+.admin-shell {
+  --admin-navy: #152033;
+  --admin-blue: #315ce8;
+  --admin-bg: #f3f5f9;
+  --admin-border: #dfe4ec;
+  --admin-muted: #6b7586;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-rows: 72px minmax(0, 1fr);
+  background: var(--admin-bg);
+  color: var(--admin-navy);
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+
+.admin-shell *, .admin-shell *::before, .admin-shell *::after { box-sizing: border-box; }
+.admin-shell__header { position: sticky; top: 0; z-index: 50; grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; min-height: 72px; padding: 0 24px; color: #fff; background: var(--admin-navy); border-bottom: 1px solid rgba(255,255,255,.1); }
+.admin-shell__menu-button { width: 44px; height: 44px; display: grid; align-content: center; gap: 5px; padding: 11px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; color: inherit; background: transparent; cursor: pointer; }
+.admin-shell__menu-button span { display: block; height: 2px; border-radius: 2px; background: currentColor; }
+.admin-shell__brand { display: inline-flex; align-items: center; gap: 11px; width: fit-content; color: #fff; text-decoration: none; }
+.admin-shell__brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px 3px 10px 3px; color: #fff; background: var(--admin-blue); font-weight: 800; }
+.admin-shell__brand > span:last-child { display: grid; line-height: 1.08; }
+.admin-shell__brand strong { font-size: .98rem; }
+.admin-shell__brand small { color: #aeb8c8; font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; }
+.admin-shell__identity { display: flex; align-items: center; gap: 18px; }
+.admin-shell__identity-copy { display: grid; text-align: right; line-height: 1.25; }
+.admin-shell__identity-copy strong { font-size: .85rem; }
+.admin-shell__identity-copy small { color: #aeb8c8; font-size: .72rem; }
+.admin-shell__logout { min-height: 40px; padding: 0 15px; border: 1px solid rgba(255,255,255,.26); border-radius: 9px; color: #fff; background: transparent; font: 700 .78rem inherit; cursor: pointer; }
+.admin-shell__logout:hover { background: #fff; color: var(--admin-navy); }
+
+.admin-shell__sidebar { position: sticky; top: 72px; align-self: start; height: calc(100vh - 72px); display: flex; flex-direction: column; padding: 28px 16px 18px; background: #fff; border-right: 1px solid var(--admin-border); overflow-y: auto; }
+.admin-shell__section-label { margin: 0 12px 12px; color: #929bab; font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.admin-shell__sidebar nav { display: grid; gap: 5px; }
+.admin-shell__sidebar nav a { min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 9px; color: #596477; font-size: .86rem; font-weight: 650; text-decoration: none; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+.admin-shell__sidebar nav a:hover { color: var(--admin-navy); background: #f0f3f8; transform: translateX(2px); }
+.admin-shell__sidebar nav a.is-active { color: #fff; background: var(--admin-blue); box-shadow: 0 8px 20px rgba(49,92,232,.2); }
+.admin-shell__sidebar nav svg { width: 20px; height: 20px; flex: 0 0 20px; }
+.admin-shell__sidebar-footer { margin-top: auto; display: grid; gap: 2px; padding: 14px 12px; border-top: 1px solid var(--admin-border); color: var(--admin-muted); font-size: .72rem; }
+.admin-shell__sidebar-footer strong { color: var(--admin-navy); font-size: .8rem; }
+.admin-shell__main { min-width: 0; padding: 30px clamp(20px, 3vw, 42px) 56px; }
+.admin-shell__page-heading { margin: 0 0 26px; }
+.admin-shell__page-heading p { margin: 0 0 4px; color: var(--admin-blue); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.admin-shell__page-heading h1 { margin: 0; color: var(--admin-navy); font-size: clamp(1.75rem, 3vw, 2.45rem); letter-spacing: -.04em; }
+.admin-shell__error { margin-bottom: 18px; padding: 12px 14px; color: #8b1e2d; background: #fff0f2; border: 1px solid #f3bdc5; border-radius: 8px; }
+.admin-shell--collapsed { grid-template-columns: 78px minmax(0, 1fr); }
+.admin-shell--collapsed .admin-shell__sidebar { padding-inline: 12px; }
+.admin-shell--collapsed .admin-shell__section-label,.admin-shell--collapsed .admin-shell__sidebar nav span,.admin-shell--collapsed .admin-shell__sidebar-footer { display: none; }
+.admin-shell--collapsed .admin-shell__sidebar nav a { justify-content: center; padding-inline: 0; }
+
+.admin-return-rail { position: fixed; left: 0; top: 50%; z-index: 45; transform: translateY(-50%); font-family: "DM Sans", system-ui, sans-serif; }
+.admin-return-rail a { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 10px 13px 10px 9px; border-radius: 0 10px 10px 0; color: #fff; background: #152033; box-shadow: 0 10px 28px rgba(21,32,51,.22); text-decoration: none; font-size: .78rem; font-weight: 700; writing-mode: vertical-rl; }
+.admin-return-rail svg { width: 18px; height: 18px; transform: rotate(90deg); }
+.admin-return-rail a:hover { background: #315ce8; }
+
+.admin-shell :is(a,button,input,select,textarea):focus-visible,.admin-return-rail a:focus-visible { outline: 3px solid rgba(49,92,232,.35); outline-offset: 3px; }
+
+@media (max-width: 760px) {
+  .admin-shell,.admin-shell--collapsed { grid-template-columns: 1fr; grid-template-rows: 68px auto minmax(0,1fr); }
+  .admin-shell__header { min-height: 68px; padding-inline: 14px; }
+  .admin-shell__identity-copy { display: none; }
+  .admin-shell__sidebar { position: static; height: auto; padding: 12px; border-right: 0; border-bottom: 1px solid var(--admin-border); }
+  .admin-shell--collapsed .admin-shell__sidebar { display: none; }
+  .admin-shell__section-label,.admin-shell__sidebar-footer { display: none; }
+  .admin-shell__sidebar nav { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-shell__sidebar nav a { min-width: 0; }
+  .admin-shell__main { padding: 24px 16px 44px; }
+  .admin-return-rail { top: auto; bottom: 18px; left: 12px; transform: none; }
+  .admin-return-rail a { border-radius: 10px; writing-mode: horizontal-tb; }
+  .admin-return-rail svg { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) { .admin-shell *,.admin-return-rail * { transition-duration: .01ms !important; } }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import AdminReturnLink from "./AdminReturnLink";
 import "../adoptionPortal.css";
 
 function AdoptionPortal() {
@@ -66,6 +67,7 @@ function AdoptionPortal() {
 
   return (
     <div className="adoption-portal">
+      <AdminReturnLink />
       {/* Hero Section */}
       <div className="hero">
         <div className="hero-pattern"></div>

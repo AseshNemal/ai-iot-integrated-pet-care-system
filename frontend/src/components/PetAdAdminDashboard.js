@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
-import axios from "axios"
-import { Link, useNavigate } from "react-router-dom"
+import hrApi from "../utils/hrApi"
+import AdminShell from "./AdminShell"
 
 function PetAdAdminDashboard() {
   const [ads, setAds] = useState([])
@@ -9,7 +9,6 @@ function PetAdAdminDashboard() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [editAd, setEditAd] = useState(null)
   const [formData, setFormData] = useState({
     image: "",
@@ -19,8 +18,6 @@ function PetAdAdminDashboard() {
     description: "",
     contactNumber: "",
   })
-  const navigate = useNavigate()
-
   useEffect(() => {
     fetchAds("Pending")
   }, [])
@@ -30,7 +27,7 @@ function PetAdAdminDashboard() {
       setError("")
       setSuccess("")
       setLoading(true)
-      const response = await axios.get(`http://localhost:8090/pet-ad/admin/list?status=${newStatus}`)
+      const response = await hrApi.get("/pet-ad/admin/list", { params: { status: newStatus } })
       setAds(response.data.ads)
       setCounts((prev) => ({ ...prev, [newStatus]: response.data.count }))
     } catch (err) {
@@ -50,7 +47,7 @@ function PetAdAdminDashboard() {
     try {
       setError("")
       setSuccess("")
-      await axios.post(`http://localhost:8090/pet-ad/admin/approve/${id}`)
+      await hrApi.post(`/pet-ad/admin/approve/${id}`)
       setSuccess("Ad approved successfully!")
       fetchAds(status)
     } catch (err) {
@@ -64,7 +61,7 @@ function PetAdAdminDashboard() {
     try {
       setError("")
       setSuccess("")
-      await axios.post(`http://localhost:8090/pet-ad/admin/reject/${id}`, { rejectionReason })
+      await hrApi.post(`/pet-ad/admin/reject/${id}`, { rejectionReason })
       setSuccess("Ad rejected successfully!")
       fetchAds(status)
     } catch (err) {
@@ -78,7 +75,7 @@ function PetAdAdminDashboard() {
     try {
       setError("")
       setSuccess("")
-      await axios.post(`http://localhost:8090/pet-ad/admin/delete/${id}`, { rejectionReason: deletionReason })
+      await hrApi.post(`/pet-ad/admin/delete/${id}`, { rejectionReason: deletionReason })
       setSuccess("Ad deleted successfully!")
       fetchAds(status)
     } catch (err) {
@@ -92,13 +89,13 @@ function PetAdAdminDashboard() {
     try {
       setError("")
       setSuccess("")
-      await axios.delete(`http://localhost:8090/pet-ad/admin/approved/delete/${id}`, {
+      await hrApi.delete(`/pet-ad/admin/approved/delete/${id}`, {
         data: { deletionReason },
       })
       setSuccess("Approved ad deleted successfully!")
       fetchAds(status)
     } catch (err) {
-      setError("Failed to delete approved ad: " + err.response?.data?.error || err.message)
+      setError(`Failed to delete approved ad: ${err.response?.data?.error || err.message}`)
     }
   }
 
@@ -107,12 +104,12 @@ function PetAdAdminDashboard() {
     try {
       setError("")
       setSuccess("")
-      await axios.put(`http://localhost:8090/pet-ad/admin/approved/edit/${editAd._id}`, formData)
+      await hrApi.put(`/pet-ad/admin/approved/edit/${editAd._id}`, formData)
       setSuccess("Approved ad updated successfully!")
       setEditAd(null)
       fetchAds(status)
     } catch (err) {
-      setError("Failed to update ad: " + err.response?.data?.error || err.message)
+      setError(`Failed to update ad: ${err.response?.data?.error || err.message}`)
     }
   }
 
@@ -126,21 +123,6 @@ function PetAdAdminDashboard() {
       description: ad.description,
       contactNumber: ad.contactNumber,
     })
-  }
-
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:8090/employee/logout")
-    } catch (logoutError) {
-      console.error("Admin logout error:", logoutError)
-    } finally {
-      localStorage.removeItem("employeeData")
-      setAds([])
-      setStatus("Pending")
-      setError("")
-      setSuccess("")
-      navigate("/login")
-    }
   }
 
   return (
@@ -572,68 +554,8 @@ function PetAdAdminDashboard() {
         }
       `}</style>
 
-      <div className="dashboard-wrapper">
-        <div className="top-navbar">
-          <div className="navbar-brand">Pet Care Admin</div>
-          <div className="navbar-user">
-            <span>Admin User</span>
-            <button onClick={handleLogout} className="logout-link">
-              <i className="fas fa-sign-out-alt"></i> Logout
-            </button>
-          </div>
-        </div>
-        <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
-          <button className="sidebar-toggle" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-            <i className={`fas ${isSidebarCollapsed ? "fa-chevron-right" : "fa-chevron-left"}`}></i>
-          </button>
-          <h3 className="sidebar-title">Menu</h3>
-          <ul>
-            <li>
-              <Link to="/adminDashboard">
-                <i className="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/employee">
-                <i className="fas fa-users"></i>
-                <span>Employee Management</span>
-              </Link>
-            </li>
-            <li className="active">
-              <Link to="/admin-dashboard">
-                <i className="fas fa-shield-alt"></i>
-                <span>Admin Dashboard (Ads)</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/adminDashboard/product">
-                <i className="fas fa-shopping-cart"></i>
-                <span>Products</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/adoption-portal">
-                <i className="fas fa-paw"></i>
-                <span>Adoption Portal</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/submit-ad">
-                <i className="fas fa-plus-circle"></i>
-                <span>Submit Ad</span>
-              </Link>
-            </li>
-            <li>
-            <Link to="/financial">
-              <i className="fas fa-plus-circle"></i>
-              <span>Financial Management</span>
-            </Link>
-            </li>
-          </ul>
-        </div>
-        <div className={`main-content ${isSidebarCollapsed ? "collapsed" : ""}`}>
-          <h2 className="page-title">Admin Dashboard (Pet Ads)</h2>
+      <AdminShell pageTitle="Adoption ad reviews">
+        <div className="pet-ad-admin-content">
 
           {error && <div className="alert alert-danger">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
@@ -806,8 +728,7 @@ function PetAdAdminDashboard() {
             </div>
           )}
         </div>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-      </div>
+      </AdminShell>
     </>
   )
 }

@@ -241,9 +241,14 @@ function Header() {
                   </div>
                 </div>
               ) : (
-                <a href="/login" className="btn btn-outline-primary">
-                  Login
-                </a>
+                <div className="site-header__auth-actions">
+                  <Link to="/employee-login" className="btn btn-outline-secondary">
+                    Employee login
+                  </Link>
+                  <Link to="/login" className="btn btn-outline-primary">
+                    Customer login
+                  </Link>
+                </div>
               )}
             </div>
           )}
