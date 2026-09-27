@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config/api";
 import { ArrowRightIcon, BagIcon, PawIcon } from "./homeIcons";
+import AdminReturnLink from "./AdminReturnLink";
 import "../storePage.css";
 
 const SearchIcon = ({ className = "" }) => (
@@ -182,6 +183,7 @@ const StorePage = () => {
 
   return (
     <main className="store-page">
+      <AdminReturnLink />
       <section className="store-hero">
         <div className="store-shell store-hero__inner">
           <div className="store-hero__copy">
