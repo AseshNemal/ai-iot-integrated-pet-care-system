@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const { timingSafeEqual } = require('node:crypto');
 const { publicEmployee, requireEmployee, requireHrAdmin, requireTrustedOrigin } = require('../middleware/employeeAuth');
 const employeeLoginLimit = require('../middleware/employeeLoginLimit');
+const allocateEmployeeId = require('../services/employeeIdAllocator');
 
 const invalidCredentials = { error: 'Invalid username or password' };
 const isBcryptHash = (value) => /^\$2[aby]\$\d\d\$/.test(value);
@@ -98,28 +99,46 @@ router.use((req, res, next) => {
 router.post('/create', async (req, res) => {
     try {
         const { firstName, lastName, username, email, password, role } = req.body;
+        let employee;
 
-        // Generate employeeId automatically
-        const employeeCount = await Employee.countDocuments();
-        const employeeId = `EMP${String(employeeCount + 1).padStart(3, '0')}`; // e.g., EMP001, EMP002
+        // Allocate from a persistent sequence so deleting an employee never
+        // moves future IDs backwards. Retry only if legacy data races the sequence.
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const employeeId = await allocateEmployeeId();
+            employee = new Employee({
+                employeeId,
+                firstName,
+                lastName,
+                username,
+                email,
+                password,
+                role,
+                availability: []
+            });
 
-        const employee = new Employee({
-            employeeId,
-            firstName,
-            lastName,
-            username,
-            email,
-            password,
-            role,
-            availability: []
-        });
+            try {
+                await employee.save();
+                break;
+            } catch (error) {
+                const employeeIdCollision = error?.code === 11000 &&
+                    (error?.keyPattern?.employeeId || error?.keyValue?.employeeId);
+                if (!employeeIdCollision) throw error;
+                employee = null;
+            }
+        }
 
-        await employee.save();
+        if (!employee) {
+            return res.status(503).send({ error: 'Unable to allocate a new employee ID. Please try again.' });
+        }
+
         const totalCount = await Employee.countDocuments(); // Get updated count
         res.status(201).send({ employee: publicEmployee(employee), totalCount });
     } catch (error) {
         console.error('Error creating employee:', error);
-        res.status(400).send({ error: error.message });
+        if (error?.code === 11000) {
+            return res.status(409).send({ error: 'An employee with that username or email already exists.' });
+        }
+        res.status(400).send({ error: 'Unable to create employee. Check the details and try again.' });
     }
 });
 
