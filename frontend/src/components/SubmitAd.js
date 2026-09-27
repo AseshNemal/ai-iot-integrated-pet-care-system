@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import axios from "axios"
+import AdminReturnLink from "./AdminReturnLink"
 import "../submitAd.css"
 
 function SubmitAd() {
@@ -107,6 +108,7 @@ function SubmitAd() {
 
   return (
     <div className="submit-ad-container">
+      <AdminReturnLink />
       <div className="back-button-container">
         <Link to="/adoption-portal" className="back-button">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
