@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import hrApi from "../utils/hrApi";
+import AdminShell from "./AdminShell";
 
 function AddEmployee() {
-    const navigate = useNavigate();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [username, setUsername] = useState("");
@@ -17,17 +16,6 @@ function AddEmployee() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [editingEmployee, setEditingEmployee] = useState(null);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-    const handleLogout = async () => {
-        try {
-            await hrApi.post('/employee/logout');
-            navigate('/employee-login');
-        } catch (logoutError) {
-            console.error('HR logout failed:', logoutError);
-            setError('Logout failed. Please try again.');
-        }
-    };
 
     useEffect(() => {
         fetchEmployees();
@@ -144,66 +132,9 @@ function AddEmployee() {
     }
 
     return (
-        <div className="dashboard-wrapper">
-            <div className="top-navbar">
-                <div className="navbar-brand">Pet Care Admin</div>
-                <div className="navbar-user">
-                    <span>Admin User</span>
-                    <button type="button" className="logout-link" onClick={handleLogout}>
-                        <i className="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
-            </div>
-            <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <button className="sidebar-toggle" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-                    <i className={`fas ${isSidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
-                </button>
-                <h3 className="sidebar-title">Menu</h3>
-                <ul>
-                    <li>
-                        <Link to="/adminDashboard">
-                            <i className="fas fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </Link>
-                    </li>
-                    <li className="active">
-                        <Link to="/employee">
-                            <i className="fas fa-users"></i>
-                            <span>Employee Management</span>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/admin-dashboard">
-                            <i className="fas fa-shield-alt"></i>
-                            <span>Admin Dashboard (Ads)</span>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/adminDashboard/product">
-                            <i className="fas fa-shopping-cart"></i>
-                            <span>Products</span>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/adoption-portal">
-                            <i className="fas fa-paw"></i>
-                            <span>Adoption Portal</span>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/submit-ad">
-                            <i className="fas fa-plus-circle"></i>
-                            <span>Submit Ad</span>
-                        </Link>
-                    </li>
-                    <Link to="/financial">
-              <i className="fas fa-plus-circle"></i>
-              <span>Financial Management</span>
-            </Link>
-                </ul>
-            </div>
-            <div className={`main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <h2 className="page-title">{editingEmployee ? "Edit Employee" : "Add New Employee"}</h2>
+        <>
+            <AdminShell pageTitle={editingEmployee ? "Edit employee" : "Employee management"}>
+            <div className="employee-management-content">
 
                 {error && <div className="alert alert-danger">{error}</div>}
                 {success && <div className="alert alert-success">{success}</div>}
@@ -370,6 +301,7 @@ function AddEmployee() {
                     )}
                 </div>
             </div>
+            </AdminShell>
             <style>
                 {`
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -577,7 +509,7 @@ function AddEmployee() {
                 `}
             </style>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-        </div>
+        </>
     );
 }
 
