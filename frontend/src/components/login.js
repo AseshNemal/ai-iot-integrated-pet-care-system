@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import hrApi from "../utils/hrApi";
 
 function Login() {
@@ -64,6 +64,23 @@ function Login() {
             height: 1px;
             background-color: rgba(0, 0, 0, 0.1);
           }
+          .employee-access-card {
+            align-items: center;
+            background: #f2f6f0;
+            border: 1px solid #dce3da;
+            border-radius: 12px;
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            margin: 30px auto 0;
+            max-width: 760px;
+            padding: 18px 20px;
+          }
+          .employee-access-card strong, .employee-access-card span { display: block; }
+          .employee-access-card span { color: #5f6d65; font-size: .92rem; margin-top: 3px; }
+          .employee-access-link { border: 1px solid #2b4a3e; border-radius: 999px; color: #2b4a3e; flex: 0 0 auto; font-weight: 700; padding: 9px 17px; text-decoration: none; }
+          .employee-access-link:hover { background: #2b4a3e; color: #fff; }
+          @media (max-width: 600px) { .employee-access-card { align-items: stretch; flex-direction: column; } .employee-access-link { text-align: center; } }
         `}
       </style>
       <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
@@ -181,6 +198,13 @@ function Login() {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="employee-access-card">
+            <div>
+              <strong>Vet, groomer, or HR administrator?</strong>
+              <span>Use the employee portal for your role-based dashboard.</span>
+            </div>
+            <Link to="/employee-login" className="employee-access-link">Employee login</Link>
           </div>
         </div>
       </section>
